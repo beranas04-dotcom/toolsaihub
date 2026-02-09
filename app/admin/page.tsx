@@ -23,6 +23,7 @@ import {
 import { auth, db } from "@/lib/firebaseClient";
 import { isAdmin } from "@/lib/admin";
 import type { Tool } from "@/types";
+
 async function bootstrapAdminClaim(u: User) {
     // 1️⃣ خذ Firebase ID token
     const token = await u.getIdToken();
@@ -40,6 +41,7 @@ async function bootstrapAdminClaim(u: User) {
         headers: { Authorization: `Bearer ${token}` },
     });
 }
+
 
 const emptyTool: Tool = {
     id: "",
