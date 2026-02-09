@@ -1,0 +1,411 @@
+{
+  "tools": [
+    {
+      "id": "canva",
+      "name": "Canva",
+      "slug": "canva",
+      "tagline": "All-in-one visual design tool with AI magic",
+      "description": "Canva is a user-friendly design platform that includes a suite of AI tools ('Magic Studio'). From Magic Write for text to Magic Media for text-to-image and text-to-video generation, Canva makes professional design accessible to everyone. It's perfect for creating social media graphics, presentations, posters, and other visual content quickly.",
+      "category": "images",
+      "tags": [
+        "design",
+        "images",
+        "marketing"
+      ],
+      "pricing": "Freemium, Pro $14.99/mo"
+    },
+    {
+      "id": "consensus",
+      "name": "ConsensusAI",
+      "slug": "consensus",
+      "tagline": "Evidence‑based answers from research papers",
+      "description": "Evidence‑based answers from research papers",
+      "category": "research",
+      "tags": [
+        "research",
+        "papers",
+        "summaries"
+      ],
+      "pricing": "Subscription"
+    },
+    {
+      "id": "copy-ai",
+      "name": "Copy.ai",
+      "slug": "copy-ai",
+      "tagline": "AI marketing and sales copy generator",
+      "description": "Copy.ai is an AI-powered copywriter that generates high-quality marketing copy for your business. From social media posts and email subject lines to blog intros and product descriptions, Copy.ai helps you end writer's block and create high-converting copy in seconds. It allows you to build custom workflows to automate your content marketing tasks.",
+      "category": "writing",
+      "tags": [
+        "writing",
+        "marketing",
+        "workflows"
+      ],
+      "pricing": "Freemium, Pro $36/mo"
+    },
+    {
+      "id": "dalle3-proxy",
+      "name": "DALL·E Studio (example)",
+      "slug": "dalle3-proxy",
+      "tagline": "Text-to-image for photoreal & illustrations",
+      "description": "DALL·E Studio brings text-to-image generation to the next level with support for photorealistic images and stylized illustrations. It includes advanced features like inpainting and high-resolution exports.",
+      "category": "images",
+      "tags": [
+        "images",
+        "text-to-image",
+        "photoreal"
+      ],
+      "pricing": "Credits-based"
+    },
+    {
+      "id": "elevenlabs-voice",
+      "name": "ElevenLabs",
+      "slug": "elevenlabs-voice",
+      "tagline": "Ultra‑natural text-to-speech & voice cloning",
+      "description": "Ultra‑natural text-to-speech & voice cloning",
+      "category": "audio",
+      "tags": [
+        "audio",
+        "tts",
+        "voice"
+      ],
+      "pricing": "Credits-based"
+    },
+    {
+      "id": "fireflies",
+      "name": "Fireflies (example)",
+      "slug": "fireflies",
+      "tagline": "AI meeting assistant with highlights",
+      "description": "AI meeting assistant with highlights",
+      "category": "productivity",
+      "tags": [
+        "meetings",
+        "crm",
+        "notes"
+      ],
+      "pricing": "Subscription"
+    },
+    {
+      "id": "gitassist",
+      "name": "GitAssist",
+      "slug": "gitassist",
+      "tagline": "PR summaries & codebase search with AI",
+      "description": "PR summaries & codebase search with AI",
+      "category": "code",
+      "tags": [
+        "code",
+        "reviews",
+        "search"
+      ],
+      "pricing": "Pro $29/mo"
+    },
+    {
+      "id": "imageopt",
+      "name": "imageOpt AI",
+      "slug": "imageopt",
+      "tagline": "Automatic image optimization and upscaling",
+      "description": "Automatic image optimization and upscaling",
+      "category": "images",
+      "tags": [
+        "images",
+        "optimize",
+        "upscale"
+      ],
+      "pricing": "Credits-based"
+    },
+    {
+      "id": "jasper-ai",
+      "name": "Jasper AI",
+      "slug": "jasper-ai",
+      "tagline": "AI copywriter and content strategy platform",
+      "description": "Jasper is an AI marketing copilot that helps enterprise teams create high-performing content faster. It's built for marketing performance, offering brand voice optimization, SEO integration, and a suite of tools for generating blog posts, social media content, and ad copy that converts.",
+      "category": "writing",
+      "tags": [
+        "writing",
+        "marketing",
+        "enterprise"
+      ],
+      "pricing": "Paid, from $39/mo"
+    },
+    {
+      "id": "leonardo-ai",
+      "name": "Leonardo.ai",
+      "slug": "leonardo-ai",
+      "tagline": "Creative workflow for game & concept artists",
+      "description": "Leonardo AI helps game developers and artists streamline their asset creation workflow. With features like batch style transfer and team workspaces, it's perfect for concepting and production.",
+      "category": "images",
+      "tags": [
+        "images",
+        "game-dev",
+        "assets"
+      ],
+      "pricing": "Pro $25/mo"
+    },
+    {
+      "id": "marketmuse-lite",
+      "name": "MarketMuse Lite",
+      "slug": "marketmuse-lite",
+      "tagline": "Content planning with AI topic modeling",
+      "description": "Content planning with AI topic modeling",
+      "category": "marketing",
+      "tags": [
+        "marketing",
+        "seo",
+        "planning"
+      ],
+      "pricing": "Pro $79/mo"
+    },
+    {
+      "id": "midjourneyx",
+      "name": "MidJourneyX",
+      "slug": "midjourneyx",
+      "tagline": "Creative image prompts for concept art",
+      "description": "Unlock your artistic potential with MidJourneyX, a powerful tool for generating creative image prompts and concept art. Ideal for designers and artists, it features high-detail renders and batch generation capabilities. Whether you're creating game assets, book illustrations, or marketing visuals, MidJourneyX delivers stunning, professional-quality images from simple text descriptions.",
+      "category": "images",
+      "tags": [
+        "images",
+        "art",
+        "generator"
+      ],
+      "pricing": "Subscription"
+    },
+    {
+      "id": "murf",
+      "name": "Murf AI",
+      "slug": "murf",
+      "tagline": "Studio-grade voiceovers in minutes",
+      "description": "Studio-grade voiceovers in minutes",
+      "category": "audio",
+      "tags": [
+        "audio",
+        "voiceovers",
+        "studio"
+      ],
+      "pricing": "Pro $19/mo"
+    },
+    {
+      "id": "notion-ai",
+      "name": "Notion AI",
+      "slug": "notion-ai",
+      "tagline": "Connected AI, writer, and Q&A inside Notion",
+      "description": "Notion AI is an integrated assistant that works directly within your Notion workspace. It can write drafts, summarize long documents, fix spelling and grammar, and answer questions based on your own notes and projects. It seamlessly connects your knowledge base with AI capabilities to improve productivity.",
+      "category": "productivity",
+      "tags": [
+        "productivity",
+        "notes",
+        "writing"
+      ],
+      "pricing": "Add-on $10/mo"
+    },
+    {
+      "id": "otterai",
+      "name": "Otter.ai (example)",
+      "slug": "otterai",
+      "tagline": "Meeting transcription & searchable notes",
+      "description": "Meeting transcription & searchable notes",
+      "category": "productivity",
+      "tags": [
+        "transcription",
+        "meetings",
+        "productivity"
+      ],
+      "pricing": "Freemium, Pro $12/mo"
+    },
+    {
+      "id": "perplexity-ai",
+      "name": "Perplexity (example)",
+      "slug": "perplexity-ai",
+      "tagline": "AI research assistant and answer engine",
+      "description": "AI research assistant and answer engine",
+      "category": "research",
+      "tags": [
+        "research",
+        "qa",
+        "sources"
+      ],
+      "pricing": "Freemium"
+    },
+    {
+      "id": "phrasee",
+      "name": "Phrasee (example)",
+      "slug": "phrasee",
+      "tagline": "AI subject lines & email copy optimizer",
+      "description": "AI subject lines & email copy optimizer",
+      "category": "marketing",
+      "tags": [
+        "email",
+        "marketing",
+        "copy"
+      ],
+      "pricing": "Enterprise"
+    },
+    {
+      "id": "pictory",
+      "name": "Pictory",
+      "slug": "pictory",
+      "tagline": "Turn scripts into shareable videos",
+      "description": "Pictory automatically turns your scripts and blog posts into engaging, shareable videos. It features auto-captions and a vast stock library, making video marketing accessible to everyone.",
+      "category": "video",
+      "tags": [
+        "video",
+        "script",
+        "social"
+      ],
+      "pricing": "Subscription"
+    },
+    {
+      "id": "playht",
+      "name": "PlayHT",
+      "slug": "playht",
+      "tagline": "Realistic TTS for podcasts & narration",
+      "description": "Realistic TTS for podcasts & narration",
+      "category": "audio",
+      "tags": [
+        "audio",
+        "tts",
+        "podcast"
+      ],
+      "pricing": "Subscription"
+    },
+    {
+      "id": "promptbase-lite",
+      "name": "PromptBase Lite",
+      "slug": "promptbase-lite",
+      "tagline": "Quick prompt packs for common tasks",
+      "description": "Quick prompt packs for common tasks",
+      "category": "utilities",
+      "tags": [
+        "prompts",
+        "packs",
+        "utility"
+      ],
+      "pricing": "One-time packs"
+    },
+    {
+      "id": "prompthub",
+      "name": "PromptHub",
+      "slug": "prompthub",
+      "tagline": "Curated prompts and templates marketplace",
+      "description": "Curated prompts and templates marketplace",
+      "category": "utilities",
+      "tags": [
+        "prompts",
+        "marketplace",
+        "templates"
+      ],
+      "pricing": "Freemium"
+    },
+    {
+      "id": "replitai",
+      "name": "ReplitAI (example)",
+      "slug": "replitai",
+      "tagline": "AI-powered coding assistant in the browser",
+      "description": "AI-powered coding assistant in the browser",
+      "category": "code",
+      "tags": [
+        "code",
+        "ide",
+        "autocompletion"
+      ],
+      "pricing": "Freemium"
+    },
+    {
+      "id": "runwayml",
+      "name": "Runway",
+      "slug": "runwayml",
+      "tagline": "AI tools for video creation and editing",
+      "description": "Runway is a comprehensive suite of AI tools for video creation and editing. From background removal to Gen-2 video generation, it empowers creators to produce professional visual content.",
+      "category": "video",
+      "tags": [
+        "video",
+        "editing",
+        "generator"
+      ],
+      "pricing": "Freemium, Pro $49/mo"
+    },
+    {
+      "id": "scribely",
+      "name": "Scribely",
+      "slug": "scribely",
+      "tagline": "Docs generation and versioned knowledge base",
+      "description": "Docs generation and versioned knowledge base",
+      "category": "productivity",
+      "tags": [
+        "docs",
+        "knowledge",
+        "kb"
+      ],
+      "pricing": "Subscription"
+    },
+    {
+      "id": "surfer-seo",
+      "name": "Surfer SEO",
+      "slug": "surfer-seo",
+      "tagline": "Data-driven SEO auditing and content optimization",
+      "description": "Surfer SEO is a content intelligence tool that merges content creation with data analysis. It gives you a step-by-step SEO workflow to boost your organic traffic. Use it to find content ideas, create outlines, audit existing pages, and write with real-time feedback on keyword usage and structure compared to top-ranking pages.",
+      "category": "writing",
+      "tags": [
+        "seo",
+        "writing",
+        "optimization"
+      ],
+      "pricing": "Paid, from $89/mo"
+    },
+    {
+      "id": "synthdocs",
+      "name": "SynthDocs",
+      "slug": "synthdocs",
+      "tagline": "Auto-generated API docs from code & comments",
+      "description": "Auto-generated API docs from code & comments",
+      "category": "developer-tools",
+      "tags": [
+        "developer",
+        "docs",
+        "api"
+      ],
+      "pricing": "Freemium"
+    },
+    {
+      "id": "synthesia-lite",
+      "name": "Synthesia",
+      "slug": "synthesia-lite",
+      "tagline": "AI avatars & text-to-video for training",
+      "description": "AI avatars & text-to-video for training",
+      "category": "video",
+      "tags": [
+        "video",
+        "tts",
+        "training"
+      ],
+      "pricing": "Per-video pricing"
+    },
+    {
+      "id": "vidopt",
+      "name": "VidOpt",
+      "slug": "vidopt",
+      "tagline": "video compression & smart trimming with AI",
+      "description": "video compression & smart trimming with AI",
+      "category": "video",
+      "tags": [
+        "video",
+        "compression",
+        "social"
+      ],
+      "pricing": "Subscription"
+    },
+    {
+      "id": "writesonic",
+      "name": "Writesonic",
+      "slug": "writesonic",
+      "tagline": "AI writer and SEO content generator",
+      "description": "Writesonic is an AI-powered content writing tool that helps you create SEO-friendly content for blogs, Facebook ads, Google ads, and Shopify. It features an AI article writer capable of generating long-form content, a chatbot (Chatsonic) with verified data, and custom AI models trained on your brand.",
+      "category": "writing",
+      "tags": [
+        "writing",
+        "seo",
+        "blogging"
+      ],
+      "pricing": "Freemium, Paid from $12/mo"
+    }
+  ],
+  "generatedAt": "2026-02-07T23:16:14.362Z"
+}
