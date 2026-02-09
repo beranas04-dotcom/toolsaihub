@@ -23,14 +23,24 @@ import {
 import { auth, db } from "@/lib/firebaseClient";
 import { isAdmin } from "@/lib/admin";
 import type { Tool } from "@/types";
-
 async function bootstrapAdminClaim(u: User) {
+    // 1️⃣ خذ Firebase ID token
     const token = await u.getIdToken();
+
+    // 2️⃣ خزّن token فـ cookie (session server)
+    await fetch("/api/auth/session", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token }),
+    });
+
+    // 3️⃣ نادِ bootstrap ديال admin (custom claims)
     await fetch("/api/admin/bootstrap", {
         method: "POST",
         headers: { Authorization: `Bearer ${token}` },
     });
 }
+
 const emptyTool: Tool = {
     id: "",
     name: "",

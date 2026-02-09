@@ -1,23 +1,31 @@
+import "server-only";
 import { cookies } from "next/headers";
+import { getAdminAuth } from "@/lib/firebaseAdmin";
 
 const ADMIN_EMAILS = (process.env.ADMIN_EMAILS || "")
-    .split(",")
+    .split(/[,;\n ]+/)
     .map((s) => s.trim().toLowerCase())
     .filter(Boolean);
 
-/**
- * Minimal server "session" check.
- * In المرحلة الجاية نربطوها ب Firebase Auth / NextAuth.
- * دابا كنستعملو cookie بسيطة فيها email (مؤقتاً).
- */
-export async function getServerSessionUser(): Promise<{ email: string; isAdmin: boolean } | null> {
-    const store = cookies();
-    const email = store.get("aitoolshub_admin_email")?.value?.toLowerCase();
+export async function getServerSessionUser(): Promise<
+    { email: string; isAdmin: boolean } | null
+> {
+    const token = cookies().get("firebase_token")?.value;
 
-    if (!email) return null;
+    if (!token) return null;
 
-    return {
-        email,
-        isAdmin: ADMIN_EMAILS.includes(email),
-    };
+    try {
+        const decoded = await getAdminAuth().verifyIdToken(token);
+
+        const email = decoded.email?.toLowerCase();
+        if (!email) return null;
+
+        return {
+            email,
+            isAdmin: ADMIN_EMAILS.includes(email),
+        };
+    } catch (err) {
+        console.error("Invalid Firebase token", err);
+        return null;
+    }
 }
