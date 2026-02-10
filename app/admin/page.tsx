@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import {
     GoogleAuthProvider,
     signInWithPopup,
@@ -21,27 +21,31 @@ import {
     setDoc,
 } from "firebase/firestore";
 import { auth, db } from "@/lib/firebaseClient";
-import { isAdmin } from "@/lib/admin";
 import type { Tool } from "@/types";
 
 async function bootstrapAdminClaim(u: User) {
-    // 1️⃣ خذ Firebase ID token
+    // 1) get firebase id token
     const token = await u.getIdToken();
 
-    // 2️⃣ خزّن token فـ cookie (session server)
+    // 2) store token in httpOnly cookie (server session)
     await fetch("/api/auth/session", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ token }),
     });
 
-    // 3️⃣ نادِ bootstrap ديال admin (custom claims)
+    // 3) call bootstrap (sets custom claim admin=true if allowed)
     await fetch("/api/admin/bootstrap", {
         method: "POST",
         headers: { Authorization: `Bearer ${token}` },
     });
 }
 
+async function checkIsAdmin(): Promise<boolean> {
+    // server decides using cookies + ADMIN_EMAILS
+    const res = await fetch("/api/admin/ping", { method: "GET" });
+    return res.ok;
+}
 
 const emptyTool: Tool = {
     id: "",
@@ -88,44 +92,49 @@ function joinList(v?: string[]) {
 export default function AdminPage() {
     const router = useRouter();
     const [user, setUser] = useState<User | null>(null);
+
     const [tools, setTools] = useState<Tool[]>([]);
     const [loading, setLoading] = useState(true);
 
     const [editingId, setEditingId] = useState<string | null>(null);
     const [form, setForm] = useState<Tool>(emptyTool);
 
-    const isAdminUser = useMemo(
-        () => isAdmin(({ email: user?.email } as any)),
-        [user?.email]
-    );
+    // null = checking, false = denied, true = ok
+    const [isAdminUser, setIsAdminUser] = useState<boolean | null>(null);
 
     useEffect(() => {
-        // ✅ complete redirect sign-in (mobile)
+        // complete redirect sign-in (mobile)
         getRedirectResult(auth).catch(() => { });
+
         const unsub = onAuthStateChanged(auth, async (u) => {
             setUser(u);
 
             if (!u) {
                 setTools([]);
+                setIsAdminUser(null);
                 setLoading(false);
                 return;
             }
 
-            // 1) allow only emails in ADMIN_EMAILS
-            if (!isAdmin(({ email: u.email } as any))) {
+            setLoading(true);
+            setIsAdminUser(null);
+
+            // 1) bootstrap session + admin claim (server)
+            try {
+                await bootstrapAdminClaim(u);
+                await u.getIdToken(true);
+            } catch (e) {
+                console.log("bootstrap skipped/failed:", e);
+            }
+
+            // 2) server-side admin check
+            const ok = await checkIsAdmin();
+            setIsAdminUser(ok);
+
+            if (!ok) {
                 setTools([]);
                 setLoading(false);
                 return;
-            }
-
-            // 2) bootstrap admin claim (sets admin=true)
-            try {
-                await bootstrapAdminClaim(u);
-                // refresh token to include new claims
-                await u.getIdToken(true);
-            } catch (e) {
-                // ignore (maybe already set)
-                console.log("bootstrap skipped/failed:", e);
             }
 
             // 3) load tools
@@ -137,8 +146,6 @@ export default function AdminPage() {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
-
-
     async function refreshTools() {
         const q = query(collection(db, "tools"), orderBy("name"));
         const snap = await getDocs(q);
@@ -149,7 +156,6 @@ export default function AdminPage() {
     async function login() {
         const provider = new GoogleAuthProvider();
 
-        // ✅ mobile => redirect (reliable), desktop => popup
         const isMobile =
             typeof window !== "undefined" &&
             window.matchMedia("(max-width: 768px)").matches;
@@ -163,19 +169,28 @@ export default function AdminPage() {
 
         try {
             await bootstrapAdminClaim(res.user);
+            await res.user.getIdToken(true);
+
+            const ok = await checkIsAdmin();
+            setIsAdminUser(ok);
+
+            if (ok) {
+                await refreshTools();
+            }
         } catch (e) {
             console.log("bootstrap failed", e);
+            setIsAdminUser(false);
+        } finally {
+            setLoading(false);
         }
     }
 
-
-
     async function logout() {
         await signOut(auth);
+        setIsAdminUser(null);
         router.push("/");
         router.refresh();
     }
-
 
     function startCreate() {
         setEditingId(null);
@@ -243,13 +258,21 @@ export default function AdminPage() {
         );
     }
 
+    if (isAdminUser === null) {
+        return (
+            <div className="container mx-auto px-6 py-12 max-w-3xl">
+                <h1 className="text-3xl font-bold mb-3">Checking access…</h1>
+                <p className="text-muted-foreground">Please wait.</p>
+            </div>
+        );
+    }
+
     if (!isAdminUser) {
         return (
             <div className="container mx-auto px-6 py-12 max-w-3xl">
                 <h1 className="text-3xl font-bold mb-3">Access denied</h1>
                 <p className="text-muted-foreground mb-6">
-                    Your email <span className="font-medium">{user.email}</span> is not in
-                    ADMIN_EMAILS.
+                    Your account is not an admin.
                 </p>
                 <button
                     onClick={logout}
@@ -266,9 +289,7 @@ export default function AdminPage() {
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
                 <div>
                     <h1 className="text-3xl font-bold">Admin Dashboard</h1>
-                    <p className="text-sm text-muted-foreground">
-                        Signed in as {user.email}
-                    </p>
+                    <p className="text-sm text-muted-foreground">Signed in as {user.email}</p>
                 </div>
                 <div className="flex gap-3">
                     <button
@@ -295,8 +316,8 @@ export default function AdminPage() {
                             <div
                                 key={t.id}
                                 className={`p-3 rounded-xl border cursor-pointer transition ${editingId === t.id
-                                    ? "border-primary"
-                                    : "border-border hover:border-primary/50"
+                                        ? "border-primary"
+                                        : "border-border hover:border-primary/50"
                                     }`}
                                 onClick={() => startEdit(t)}
                             >
@@ -352,9 +373,7 @@ export default function AdminPage() {
                             <div className="font-medium mb-1">Tagline</div>
                             <input
                                 value={form.tagline || ""}
-                                onChange={(e) =>
-                                    setForm((p) => ({ ...p, tagline: e.target.value }))
-                                }
+                                onChange={(e) => setForm((p) => ({ ...p, tagline: e.target.value }))}
                                 className="w-full px-3 py-2 rounded-lg border border-border bg-background"
                             />
                         </label>
@@ -374,9 +393,7 @@ export default function AdminPage() {
                             <div className="font-medium mb-1">Category</div>
                             <input
                                 value={form.category || ""}
-                                onChange={(e) =>
-                                    setForm((p) => ({ ...p, category: e.target.value }))
-                                }
+                                onChange={(e) => setForm((p) => ({ ...p, category: e.target.value }))}
                                 className="w-full px-3 py-2 rounded-lg border border-border bg-background"
                                 placeholder="writing"
                             />
@@ -386,9 +403,7 @@ export default function AdminPage() {
                             <div className="font-medium mb-1">Pricing</div>
                             <input
                                 value={form.pricing || ""}
-                                onChange={(e) =>
-                                    setForm((p) => ({ ...p, pricing: e.target.value }))
-                                }
+                                onChange={(e) => setForm((p) => ({ ...p, pricing: e.target.value }))}
                                 className="w-full px-3 py-2 rounded-lg border border-border bg-background"
                                 placeholder="Freemium, Pro $29/mo"
                             />
@@ -398,9 +413,7 @@ export default function AdminPage() {
                             <div className="font-medium mb-1">Website</div>
                             <input
                                 value={form.website || ""}
-                                onChange={(e) =>
-                                    setForm((p) => ({ ...p, website: e.target.value }))
-                                }
+                                onChange={(e) => setForm((p) => ({ ...p, website: e.target.value }))}
                                 className="w-full px-3 py-2 rounded-lg border border-border bg-background"
                             />
                         </label>
@@ -420,9 +433,7 @@ export default function AdminPage() {
                             <div className="font-medium mb-1">Logo path</div>
                             <input
                                 value={form.logo || ""}
-                                onChange={(e) =>
-                                    setForm((p) => ({ ...p, logo: e.target.value }))
-                                }
+                                onChange={(e) => setForm((p) => ({ ...p, logo: e.target.value }))}
                                 className="w-full px-3 py-2 rounded-lg border border-border bg-background"
                                 placeholder="/logos/tool.svg"
                             />
@@ -446,9 +457,7 @@ export default function AdminPage() {
                             <div className="font-medium mb-1">Tags (one per line)</div>
                             <textarea
                                 value={joinList(form.tags)}
-                                onChange={(e) =>
-                                    setForm((p) => ({ ...p, tags: splitList(e.target.value) }))
-                                }
+                                onChange={(e) => setForm((p) => ({ ...p, tags: splitList(e.target.value) }))}
                                 className="w-full px-3 py-2 rounded-lg border border-border bg-background min-h-[90px]"
                             />
                         </label>
@@ -458,10 +467,7 @@ export default function AdminPage() {
                             <textarea
                                 value={joinList(form.features)}
                                 onChange={(e) =>
-                                    setForm((p) => ({
-                                        ...p,
-                                        features: splitList(e.target.value),
-                                    }))
+                                    setForm((p) => ({ ...p, features: splitList(e.target.value) }))
                                 }
                                 className="w-full px-3 py-2 rounded-lg border border-border bg-background min-h-[90px]"
                             />
@@ -471,9 +477,7 @@ export default function AdminPage() {
                             <div className="font-medium mb-1">Pros (one per line)</div>
                             <textarea
                                 value={joinList(form.pros)}
-                                onChange={(e) =>
-                                    setForm((p) => ({ ...p, pros: splitList(e.target.value) }))
-                                }
+                                onChange={(e) => setForm((p) => ({ ...p, pros: splitList(e.target.value) }))}
                                 className="w-full px-3 py-2 rounded-lg border border-border bg-background min-h-[90px]"
                             />
                         </label>
@@ -482,9 +486,7 @@ export default function AdminPage() {
                             <div className="font-medium mb-1">Cons (one per line)</div>
                             <textarea
                                 value={joinList(form.cons)}
-                                onChange={(e) =>
-                                    setForm((p) => ({ ...p, cons: splitList(e.target.value) }))
-                                }
+                                onChange={(e) => setForm((p) => ({ ...p, cons: splitList(e.target.value) }))}
                                 className="w-full px-3 py-2 rounded-lg border border-border bg-background min-h-[90px]"
                             />
                         </label>
