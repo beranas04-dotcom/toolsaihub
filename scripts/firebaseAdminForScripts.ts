@@ -1,31 +1,11 @@
-import admin from "firebase-admin";
+// scripts/firebaseAdminForScripts.ts
 
-function getPrivateKey(): string | undefined {
-    const b64 = process.env.FIREBASE_PRIVATE_KEY_B64;
-    if (b64) return Buffer.from(b64, "base64").toString("utf8");
+import { getAdminDb } from "../lib/firebaseAdmin";
 
-    const key = process.env.FIREBASE_PRIVATE_KEY;
-    if (!key) return undefined;
-
-    return key.replace(/\\n/g, "\n");
-}
-
+/**
+ * Used only by scripts (upsertTools, etc.)
+ * Relies on the unified Firebase Admin init.
+ */
 export function getDbForScripts() {
-    if (!admin.apps.length) {
-        const projectId = process.env.FIREBASE_PROJECT_ID;
-        const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
-        const privateKey = getPrivateKey();
-
-        if (!projectId || !clientEmail || !privateKey) {
-            throw new Error(
-                "Missing Firebase Admin env vars: FIREBASE_PROJECT_ID, FIREBASE_CLIENT_EMAIL, FIREBASE_PRIVATE_KEY_B64"
-            );
-        }
-
-        admin.initializeApp({
-            credential: admin.credential.cert({ projectId, clientEmail, privateKey }),
-        });
-    }
-
-    return admin.firestore();
+    return getAdminDb();
 }

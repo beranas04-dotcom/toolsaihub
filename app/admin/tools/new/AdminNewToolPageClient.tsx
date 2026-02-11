@@ -1,14 +1,14 @@
 import { redirect } from "next/navigation";
 import { requireAdminUser } from "@/lib/admin-session";
-import AdminToolsPageClient from "./AdminToolsPageClient";
+import AdminNewToolPageClient from "./AdminNewToolPageClient";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-export default async function AdminToolsPage() {
+export default async function AdminNewToolPage() {
     try {
         await requireAdminUser();
-        return <AdminToolsPageClient />;
+        return <AdminNewToolPageClient />;
     } catch {
         redirect("/admin/login");
     }

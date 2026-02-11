@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { requireAdminUser } from "@/lib/admin-session";
 import { getAdminDb } from "@/lib/firebaseAdmin";
 
 function normalizeId(input: string) {
@@ -27,7 +28,6 @@ function isValidHttpUrl(value: string) {
 }
 
 function toStringArray(v: any): string[] {
-    // Accept array OR string (split by newlines)
     if (Array.isArray(v)) {
         return v.map((x) => String(x || "").trim()).filter(Boolean);
     }
@@ -56,6 +56,9 @@ export const dynamic = "force-dynamic";
 
 export async function POST(req: Request) {
     try {
+        // ✅ hard gate (cookie session + ADMIN_EMAILS)
+        await requireAdminUser();
+
         const body = await req.json().catch(() => ({}));
 
         const name = String(body?.name || "").trim();
@@ -86,15 +89,12 @@ export async function POST(req: Request) {
         );
 
         const nowIso = new Date().toISOString();
-        const lastUpdated =
-            String(body?.lastUpdated || "").trim() || nowIso.slice(0, 10);
+        const lastUpdated = String(body?.lastUpdated || "").trim() || nowIso.slice(0, 10);
 
-        const tool = {
-            // identity
+        const tool: any = {
             id: slug,
             slug,
 
-            // content
             name,
             websiteUrl,
             affiliateUrl: affiliateUrl || "",
@@ -105,30 +105,25 @@ export async function POST(req: Request) {
             pricing: String(body?.pricing || "freemium"),
             tags,
 
-            // flags
             status: body?.status === "published" ? "published" : "draft",
             featured: Boolean(body?.featured),
             verified: Boolean(body?.verified),
             freeTrial: Boolean(body?.freeTrial),
 
-            // rich arrays
             features: toStringArray(body?.features),
             pros: toStringArray(body?.pros),
             cons: toStringArray(body?.cons),
             useCases: toStringArray(body?.useCases),
 
-            // meta
             reviewedBy: String(body?.reviewedBy || "AIToolsHub Team").trim(),
             lastUpdated,
             updatedAt: nowIso,
 
-            // keep createdAt if already exists in doc
             createdAt: String(body?.createdAt || "").trim() || nowIso,
         };
 
         const db = getAdminDb();
 
-        // Preserve createdAt if doc exists (so edits won't reset it)
         const ref = db.collection("tools").doc(slug);
         const snap = await ref.get();
         if (snap.exists) {
@@ -140,10 +135,15 @@ export async function POST(req: Request) {
 
         return NextResponse.json({ ok: true, id: slug });
     } catch (e: any) {
+        const msg = String(e?.message || "");
+        if (msg === "UNAUTHENTICATED") {
+            return NextResponse.json({ error: "Not signed in" }, { status: 401 });
+        }
+        if (msg === "FORBIDDEN") {
+            return NextResponse.json({ error: "Not allowed" }, { status: 403 });
+        }
+
         console.error(e);
-        return NextResponse.json(
-            { error: e?.message || "Server error" },
-            { status: 500 }
-        );
+        return NextResponse.json({ error: "Server error" }, { status: 500 });
     }
 }
