@@ -20,8 +20,9 @@ export default function AdminLoginPage() {
                 body: JSON.stringify({ token }),
             });
 
-            router.push("/admin");
+            router.replace("/admin");
             router.refresh();
+
         } catch (err) {
             console.error(err);
             alert("Google sign-in failed");

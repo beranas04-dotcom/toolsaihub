@@ -127,6 +127,18 @@
       "pricing": "Paid, from $39/mo"
     },
     {
+      "id": "laosj",
+      "name": "qlaj,",
+      "slug": "laosj",
+      "tagline": "zedddss",
+      "description": "sdezd dzdd zdc",
+      "category": "audio",
+      "tags": [
+        "sdfe"
+      ],
+      "pricing": "paid"
+    },
+    {
       "id": "leonardo-ai",
       "name": "Leonardo.ai",
       "slug": "leonardo-ai",
@@ -407,5 +419,5 @@
       "pricing": "Freemium, Paid from $12/mo"
     }
   ],
-  "generatedAt": "2026-02-07T23:16:14.362Z"
+  "generatedAt": "2026-02-11T19:54:43.001Z"
 }

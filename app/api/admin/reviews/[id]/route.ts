@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import admin from "firebase-admin";
+import { FieldValue } from "firebase-admin/firestore";
 import { getAdminAuth, getDb } from "@/lib/firebaseAdmin";
 
 function clampRating(x: any) {
@@ -8,19 +8,29 @@ function clampRating(x: any) {
     return Math.max(1, Math.min(5, n));
 }
 
-export async function POST(req: Request, { params }: { params: { id: string } }) {
+export async function POST(
+    req: Request,
+    { params }: { params: { id: string } }
+) {
     try {
         const authHeader = req.headers.get("authorization") || "";
         const token = authHeader.startsWith("Bearer ") ? authHeader.slice(7) : "";
-        if (!token) return NextResponse.json({ error: "Missing token" }, { status: 401 });
+        if (!token) {
+            return NextResponse.json({ error: "Missing token" }, { status: 401 });
+        }
 
         const decoded = await getAdminAuth().verifyIdToken(token);
-        if (decoded.admin !== true) return NextResponse.json({ error: "Not allowed" }, { status: 403 });
+
+        // Keep existing behavior: requires custom claim { admin: true }
+        if (decoded.admin !== true) {
+            return NextResponse.json({ error: "Not allowed" }, { status: 403 });
+        }
 
         const { action, reason } = await req.json().catch(() => ({}));
         const reviewId = params.id;
 
-        const nextStatus: "approved" | "rejected" = action === "rejected" ? "rejected" : "approved";
+        const nextStatus: "approved" | "rejected" =
+            action === "rejected" ? "rejected" : "approved";
 
         const db = getDb();
         const reviewRef = db.collection("reviews").doc(reviewId);
@@ -55,19 +65,16 @@ export async function POST(req: Request, { params }: { params: { id: string } })
             if (nextStatus === "approved") {
                 // ✅ Approve logic
                 if (currentStatus === "approved") {
-                    // already approved => idempotent (ما ندير والو)
+                    // already approved => idempotent
                     nextAvg = prevAvg;
                     nextCount = prevCount;
                 } else if (currentStatus === "pending" || currentStatus === "rejected") {
-                    // case 1: first time approve OR approving after rejected
-                    // لكن خاصنا نعرف واش هادي كانت approved قبل (edit flow)
-                    // إذا lastApprovedRating موجود (>0): معناها كانت approved قبل وتبدلات
+                    // first time approve OR approving after rejected
                     if (lastApprovedRating > 0 && prevCount > 0) {
                         // edit approved again: remove old rating then add new rating (count stays same)
-                        // total = avg*count
                         const total = prevAvg * prevCount;
                         const adjustedTotal = total - lastApprovedRating + newRating;
-                        nextCount = prevCount; // same count
+                        nextCount = prevCount;
                         nextAvg = nextCount ? adjustedTotal / nextCount : 0;
                     } else {
                         // first time approve: count +1
@@ -81,11 +88,11 @@ export async function POST(req: Request, { params }: { params: { id: string } })
                     reviewRef,
                     {
                         status: "approved",
-                        moderatedAt: admin.firestore.FieldValue.serverTimestamp(),
+                        moderatedAt: FieldValue.serverTimestamp(),
                         moderatedBy: decoded.uid,
                         moderatedByEmail: decoded.email || null,
                         rejectReason: null,
-                        approvedAt: admin.firestore.FieldValue.serverTimestamp(),
+                        approvedAt: FieldValue.serverTimestamp(),
 
                         // ✅ مهم: نخزنو rating اللي دخلات فـ aggregates
                         lastApprovedRating: newRating,
@@ -98,7 +105,7 @@ export async function POST(req: Request, { params }: { params: { id: string } })
                     {
                         ratingAvg: nextAvg,
                         ratingCount: nextCount,
-                        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+                        updatedAt: FieldValue.serverTimestamp(),
                     },
                     { merge: true }
                 );
@@ -118,11 +125,11 @@ export async function POST(req: Request, { params }: { params: { id: string } })
                     reviewRef,
                     {
                         status: "rejected",
-                        moderatedAt: admin.firestore.FieldValue.serverTimestamp(),
+                        moderatedAt: FieldValue.serverTimestamp(),
                         moderatedBy: decoded.uid,
                         moderatedByEmail: decoded.email || null,
                         rejectReason: String(reason || ""),
-                        rejectedAt: admin.firestore.FieldValue.serverTimestamp(),
+                        rejectedAt: FieldValue.serverTimestamp(),
                     },
                     { merge: true }
                 );
@@ -132,7 +139,7 @@ export async function POST(req: Request, { params }: { params: { id: string } })
                     {
                         ratingAvg: nextAvg,
                         ratingCount: nextCount,
-                        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+                        updatedAt: FieldValue.serverTimestamp(),
                     },
                     { merge: true }
                 );

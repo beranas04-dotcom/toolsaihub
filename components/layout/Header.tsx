@@ -1,8 +1,8 @@
 "use client";
 
-// Header component for site navigation
 import Link from "next/link";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import { useAuth } from "@/components/providers/AuthProvider";
 import { useTheme } from "@/components/providers/ThemeProvider";
 import { siteMetadata } from "@/lib/siteMetadata";
@@ -19,18 +19,35 @@ import {
 function Header() {
     const { user, signOut } = useAuth();
     const { theme, toggleTheme } = useTheme();
+    const router = useRouter();
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
     const navigation = [
-
         { name: "Home", href: "/" },
         { name: "Tools", href: "/tools" },
         { name: "Categories", href: "/categories" },
         { name: "Best", href: "/best" },
         { name: "Blog", href: "/blog" },
-
         { name: "Submit Tool", href: "/submit" },
     ];
+
+    async function handleSignOut() {
+        try {
+            // 1) Firebase sign out (client)
+            await signOut();
+
+            // 2) Delete admin session cookie (server)
+            await fetch("/api/auth/session", { method: "DELETE" });
+        } finally {
+            // 3) Redirect based on role
+            if (user?.isAdmin) {
+                router.replace("/admin/login");
+            } else {
+                router.replace("/auth/signin");
+            }
+            router.refresh();
+        }
+    }
 
     return (
         <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -66,7 +83,7 @@ function Header() {
                         ))}
                     </div>
 
-                    {/* Desktop Search (dropdown) */}
+                    {/* Desktop Search */}
                     <div className="hidden lg:flex flex-1 justify-center">
                         <HeaderSearch />
                     </div>
@@ -104,13 +121,12 @@ function Header() {
                                 </button>
 
                                 {/* Dropdown menu */}
-                                <div className="absolute right-0 mt-2 w-56 rounded-md shadow-lg bg-popover border border-border opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all">
+                                <div className="absolute right-0 mt-2 w-64 rounded-md shadow-lg bg-popover border border-border opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all">
                                     <div className="py-1">
                                         <div className="px-4 py-2 text-sm text-muted-foreground border-b border-border">
                                             {user.email}
                                         </div>
 
-                                        {/* Dashboard */}
                                         <Link
                                             href="/dashboard"
                                             className="block px-4 py-2 text-sm hover:bg-accent transition-colors"
@@ -118,7 +134,6 @@ function Header() {
                                             Dashboard
                                         </Link>
 
-                                        {/* My Reviews */}
                                         <Link
                                             href="/my-reviews"
                                             className="block px-4 py-2 text-sm hover:bg-accent transition-colors"
@@ -126,17 +141,35 @@ function Header() {
                                             My Reviews
                                         </Link>
 
-
                                         {/* Admin links */}
                                         {user.isAdmin && (
                                             <>
+                                                <div className="my-1 border-t border-border" />
+
                                                 <Link
                                                     href="/admin"
                                                     className="block px-4 py-2 text-sm hover:bg-accent transition-colors"
                                                 >
-                                                    Admin Panel
+                                                    Admin Dashboard
                                                 </Link>
-
+                                                <Link
+                                                    href="/admin/tools"
+                                                    className="block px-4 py-2 text-sm hover:bg-accent transition-colors"
+                                                >
+                                                    Manage Tools
+                                                </Link>
+                                                <Link
+                                                    href="/admin/tools/new"
+                                                    className="block px-4 py-2 text-sm hover:bg-accent transition-colors"
+                                                >
+                                                    New Tool
+                                                </Link>
+                                                <Link
+                                                    href="/admin/submissions"
+                                                    className="block px-4 py-2 text-sm hover:bg-accent transition-colors"
+                                                >
+                                                    Submissions
+                                                </Link>
                                                 <Link
                                                     href="/admin/reviews"
                                                     className="block px-4 py-2 text-sm hover:bg-accent transition-colors"
@@ -146,8 +179,10 @@ function Header() {
                                             </>
                                         )}
 
+                                        <div className="my-1 border-t border-border" />
+
                                         <button
-                                            onClick={signOut}
+                                            onClick={handleSignOut}
                                             className="block w-full text-left px-4 py-2 text-sm hover:bg-accent transition-colors"
                                         >
                                             Sign Out
