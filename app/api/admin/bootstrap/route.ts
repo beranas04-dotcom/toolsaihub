@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
-import { getAdminDb } from "@/lib/firebase-admin";
+import { getAdminDb } from "@/lib/firebaseAdmin";
 
 export const dynamic = "force-dynamic";
 
-export async function GET() {
+export async function POST() {
     // Just initializing admin + db connection (and optionally ensure collections exist)
     getAdminDb();
     return NextResponse.json({ ok: true });
