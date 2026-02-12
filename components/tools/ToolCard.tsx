@@ -17,52 +17,53 @@ function getDomain(url?: string) {
 
 export default function ToolCard({ tool }: { tool: Tool }) {
     const hasOut = Boolean(tool.affiliateUrl || tool.website);
+    const domain = getDomain(tool.website || tool.affiliateUrl);
 
     return (
-        <div className="bg-card border border-border rounded-xl p-5 hover:shadow-lg transition flex flex-col h-full">
-            {/* Top */}
-            <div className="flex items-start gap-3">
+        <div className="group relative bg-card border border-border rounded-2xl p-6 hover:shadow-xl hover:border-primary/40 transition-all duration-300 flex flex-col h-full">
+
+            {/* HEADER */}
+            <div className="flex items-start gap-4">
                 <ToolLogo
                     src={tool.logo}
                     website={tool.website || tool.affiliateUrl}
                     alt={tool.name}
-                    className="w-10 h-10 rounded object-contain bg-muted/30 p-1"
+                    className="w-12 h-12 rounded-lg object-contain bg-muted/40 p-2"
                 />
 
-
                 <div className="min-w-0 flex-1">
-                    <Link href={`/tools/${tool.slug || tool.id}`} className="block group">
-                        <h3 className="text-lg font-semibold group-hover:text-primary transition-colors line-clamp-1">
+                    <Link href={`/tools/${tool.slug || tool.id}`}>
+                        <h3 className="text-lg font-semibold leading-tight group-hover:text-primary transition-colors line-clamp-1">
                             {tool.name}
                         </h3>
-
-                        {tool.tagline ? (
-                            <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
-                                {tool.tagline}
-                            </p>
-                        ) : null}
                     </Link>
+
+                    {tool.tagline && (
+                        <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
+                            {tool.tagline}
+                        </p>
+                    )}
                 </div>
             </div>
 
-            {/* Features */}
+            {/* FEATURES */}
             {tool.features?.length ? (
-                <ul className="text-xs text-muted-foreground mt-3 list-disc pl-4 space-y-1">
+                <ul className="text-xs text-muted-foreground mt-4 space-y-1">
                     {tool.features.slice(0, 3).map((f) => (
                         <li key={f} className="line-clamp-1">
-                            {f}
+                            • {f}
                         </li>
                     ))}
                 </ul>
             ) : null}
 
-            {/* Tags (limit 6) */}
+            {/* TAGS */}
             {tool.tags?.length ? (
-                <div className="flex flex-wrap gap-2 mt-3">
-                    {tool.tags.slice(0, 6).map((tag) => (
+                <div className="flex flex-wrap gap-2 mt-4">
+                    {tool.tags.slice(0, 4).map((tag) => (
                         <span
                             key={tag}
-                            className="text-[11px] px-2 py-1 rounded-full border border-border bg-muted text-muted-foreground"
+                            className="text-[11px] px-2 py-1 rounded-full bg-primary/10 text-primary"
                         >
                             {tag}
                         </span>
@@ -70,48 +71,51 @@ export default function ToolCard({ tool }: { tool: Tool }) {
                 </div>
             ) : null}
 
-            {/* Bottom */}
-            <div className="mt-auto pt-4 flex items-center justify-between gap-3">
-                <div className="flex items-center gap-2 min-w-0">
-                    {tool.pricing ? (
-                        <span className="text-xs font-medium bg-muted px-2 py-1 rounded">
+            {/* FOOTER */}
+            <div className="mt-auto pt-6 flex flex-col gap-3">
+
+                {/* Meta */}
+                <div className="flex items-center justify-between text-xs text-muted-foreground">
+                    {tool.pricing && (
+                        <span className="bg-muted px-2 py-1 rounded font-medium">
                             {tool.pricing}
                         </span>
-                    ) : null}
+                    )}
 
-                    {tool.website ? (
-                        <span className="text-xs text-muted-foreground truncate">
-                            🔗 {getDomain(tool.website)}
+                    {domain && (
+                        <span className="truncate max-w-[120px] text-right">
+                            {domain}
                         </span>
-                    ) : null}
+                    )}
                 </div>
 
-                <div className="flex items-center gap-3 shrink-0">
+                {/* ACTIONS */}
+                <div className="flex items-center gap-3">
+
                     <Link
                         href={`/tools/${tool.slug || tool.id}`}
-                        className="text-sm font-semibold text-muted-foreground hover:text-foreground transition"
+                        className="flex-1 text-center text-sm font-medium border border-border rounded-lg py-2 hover:bg-muted transition"
                     >
-                        Open →
+                        View Details
                     </Link>
 
-                    {hasOut ? (
+                    {hasOut && (
                         <Link
                             href={`/api/out?toolId=${tool.id}`}
                             target="_blank"
                             rel="sponsored noopener noreferrer"
                             onClick={() =>
-                                trackEvent("outbound_click", {
+                                trackEvent("affiliate_click", {
                                     tool_id: tool.id,
                                     tool_name: tool.name,
                                     category: tool.category || "",
-                                    destination: "out",
                                 })
                             }
-                            className="text-sm font-semibold text-primary hover:underline"
+                            className="flex-1 text-center text-sm font-semibold bg-primary text-primary-foreground rounded-lg py-2 hover:opacity-95 transition"
                         >
-                            Visit →
+                            Visit Website
                         </Link>
-                    ) : null}
+                    )}
                 </div>
             </div>
         </div>
