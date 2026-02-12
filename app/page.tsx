@@ -7,8 +7,7 @@ import NewsletterForm from "@/components/newsletter/NewsletterForm";
 import ToolCard from "@/components/tools/ToolCard";
 import Link from "next/link";
 
-import { getAllTools } from "@/lib/toolsRepo";
-import { getRecentlyUpdatedTools } from "@/lib/toolsRepo";
+import { getAllTools, getRecentlyUpdatedTools, getAllCategories } from "@/lib/toolsRepo";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -22,6 +21,7 @@ export default async function HomePage() {
     const featuredTools = allTools.filter((t) => t.featured).slice(0, 6);
 
     const latestTools = await getRecentlyUpdatedTools(6);
+    const categories = await getAllCategories();
 
     return (
         <div className="flex flex-col">
@@ -29,7 +29,7 @@ export default async function HomePage() {
 
             <Stats toolCount={allTools.length} />
 
-            <CategoryGrid />
+            <CategoryGrid categories={categories} />
 
             <FeaturedTools tools={featuredTools} />
 

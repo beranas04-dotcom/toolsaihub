@@ -146,5 +146,24 @@ export async function getRecentlyUpdatedTools(limit = 6): Promise<Tool[]> {
         });
 }
 
+export async function getAllCategories() {
+    const tools = (await getAllTools()).filter((t) => t.status === "published");
+    const counts: Record<string, number> = {};
+
+    for (const tool of tools) {
+        if (!tool.category) continue;
+        const key = tool.category.toLowerCase().trim();
+        counts[key] = (counts[key] || 0) + 1;
+    }
+
+    return Object.entries(counts).map(([key, count]) => ({
+        key,
+        count,
+        title: "",
+        description: "",
+        icon: "",
+    }));
+}
+
 
 
