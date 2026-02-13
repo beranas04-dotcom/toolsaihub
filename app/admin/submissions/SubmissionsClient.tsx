@@ -1,51 +1,47 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
-import type { Submission } from "@/lib/admin-submissions";
+
+type Submission = {
+    id: string;
+    toolName: string;
+    websiteUrl: string;
+    description?: string;
+    category?: string;
+    submitterEmail?: string;
+    status: "pending" | "approved" | "rejected";
+    createdAt: string;
+};
 
 export default function SubmissionsClient({ initial }: { initial: Submission[] }) {
-    const router = useRouter();
-    const [items, setItems] = useState<Submission[]>(initial || []);
+    const [items, setItems] = useState<Submission[]>(initial);
     const [busyId, setBusyId] = useState<string | null>(null);
 
-    async function updateStatus(id: string, status: "approved" | "rejected") {
+    async function act(id: string, action: "approve" | "reject") {
         setBusyId(id);
         try {
             const res = await fetch("/api/admin/submissions/status", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ id, status }),
+                body: JSON.stringify({ id, action }),
             });
 
             const data = await res.json().catch(() => ({}));
-
-            if (res.status === 401) {
-                router.replace("/admin/login");
-                router.refresh();
-                return;
-            }
-
             if (!res.ok) throw new Error(data?.error || "Failed");
 
-            setItems((prev) => prev.map((x) => (x.id === id ? { ...x, status } : x)));
+            // UX: approve => remove from list (because moved to tools)
+            // reject => update status
+            setItems((prev) =>
+                action === "approve"
+                    ? prev.filter((x) => x.id !== id)
+                    : prev.map((x) => (x.id === id ? { ...x, status: "rejected" } : x))
+            );
         } catch (e: any) {
             console.error(e);
-            alert(e?.message || "Failed to update submission");
+            alert(e?.message || "Failed");
         } finally {
             setBusyId(null);
         }
-    }
-
-    if (!items.length) {
-        return (
-            <div className="bg-muted/30 border border-border rounded-xl p-10 text-center">
-                <h2 className="text-xl font-semibold mb-2">No submissions yet</h2>
-                <p className="text-muted-foreground">
-                    When users submit tools, they will appear here.
-                </p>
-            </div>
-        );
     }
 
     return (
@@ -80,22 +76,23 @@ export default function SubmissionsClient({ initial }: { initial: Submission[] }
                                         <span className="font-medium">Category:</span> {s.category || "—"}
                                     </div>
                                     <div className="mt-1">
-                                        <span className="font-medium">Submitter:</span>{" "}
-                                        {s.submitterEmail || "—"}
+                                        <span className="font-medium">Submitter:</span> {s.submitterEmail || "—"}
                                     </div>
                                 </div>
 
                                 {s.description ? (
-                                    <p className="mt-4 text-sm leading-relaxed text-foreground/90">
-                                        {s.description}
-                                    </p>
+                                    <p className="mt-4 text-sm leading-relaxed text-foreground/90">{s.description}</p>
                                 ) : null}
+
+                                <div className="mt-4 text-xs text-muted-foreground">
+                                    Created: {new Date(s.createdAt).toLocaleString()}
+                                </div>
                             </div>
 
                             <div className="flex gap-2">
                                 <button
                                     disabled={busy}
-                                    onClick={() => updateStatus(s.id, "approved")}
+                                    onClick={() => act(s.id, "approve")}
                                     className="px-4 py-2 rounded-lg bg-green-600 text-white text-sm font-semibold hover:bg-green-700 disabled:opacity-60"
                                 >
                                     {busy ? "..." : "Approve"}
@@ -103,20 +100,23 @@ export default function SubmissionsClient({ initial }: { initial: Submission[] }
 
                                 <button
                                     disabled={busy}
-                                    onClick={() => updateStatus(s.id, "rejected")}
+                                    onClick={() => act(s.id, "reject")}
                                     className="px-4 py-2 rounded-lg bg-red-600 text-white text-sm font-semibold hover:bg-red-700 disabled:opacity-60"
                                 >
                                     {busy ? "..." : "Reject"}
                                 </button>
                             </div>
                         </div>
-
-                        <div className="mt-4 text-xs text-muted-foreground">
-                            Created: {new Date(s.createdAt).toLocaleString()}
-                        </div>
                     </div>
                 );
             })}
+
+            {items.length === 0 ? (
+                <div className="bg-muted/30 border border-border rounded-xl p-10 text-center">
+                    <h2 className="text-xl font-semibold mb-2">No submissions</h2>
+                    <p className="text-muted-foreground">New submissions will appear here.</p>
+                </div>
+            ) : null}
         </div>
     );
 }

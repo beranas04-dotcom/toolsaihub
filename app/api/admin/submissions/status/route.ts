@@ -1,18 +1,9 @@
 import { NextResponse } from "next/server";
-import { cookies } from "next/headers";
-import { getAdminAuth, getAdminDb } from "@/lib/firebaseAdmin";
+import { getAdminDb } from "@/lib/firebaseAdmin";
+import { requireAdminUser } from "@/lib/admin-session";
 
-export const dynamic = "force-dynamic";
-
-function getAdminEmailAllowlist() {
-    return (process.env.ADMIN_EMAILS || "")
-        .split(",")
-        .map((s) => s.trim().toLowerCase())
-        .filter(Boolean);
-}
-
-function normalizeId(input: string) {
-    return input
+function slugify(input: string) {
+    return String(input || "")
         .toLowerCase()
         .trim()
         .replace(/&/g, "and")
@@ -20,100 +11,107 @@ function normalizeId(input: string) {
         .replace(/(^-|-$)/g, "");
 }
 
+export const dynamic = "force-dynamic";
+
 export async function POST(req: Request) {
     try {
-        const body = await req.json().catch(() => ({}));
-        const id = String(body?.id || "").trim();
-        const status = String(body?.status || "").trim();
+        const adminUser = await requireAdminUser();
+        const { id, action } = (await req.json()) as { id?: string; action?: "approve" | "reject" };
 
-        if (!id)
-            return NextResponse.json({ error: "Missing id" }, { status: 400 });
-
-        if (!["approved", "rejected"].includes(status))
-            return NextResponse.json({ error: "Invalid status" }, { status: 400 });
-
-        const token =
-            cookies().get("__session")?.value ||
-            cookies().get("aitoolshub_token")?.value;
-
-        if (!token)
-            return NextResponse.json({ error: "No token" }, { status: 401 });
-
-        const decoded = await getAdminAuth().verifyIdToken(token);
-        const email = String(decoded.email || "").toLowerCase();
-
-        const allowlist = getAdminEmailAllowlist();
-        if (!allowlist.includes(email))
-            return NextResponse.json({ error: "Not allowed" }, { status: 403 });
+        if (!id || !action) {
+            return NextResponse.json({ error: "Missing id/action" }, { status: 400 });
+        }
 
         const db = getAdminDb();
+        const subRef = db.collection("submissions").doc(id);
+        const subSnap = await subRef.get();
 
-        const submissionRef = db.collection("submissions").doc(id);
-        const submissionSnap = await submissionRef.get();
-
-        if (!submissionSnap.exists)
+        if (!subSnap.exists) {
             return NextResponse.json({ error: "Submission not found" }, { status: 404 });
+        }
 
-        const submission = submissionSnap.data() as any;
+        const sub = subSnap.data() as any;
+        const now = new Date().toISOString();
 
-        if (status === "approved") {
-            const toolId = normalizeId(submission.toolName);
-
-            const toolData = {
-                id: toolId,
-                slug: toolId,
-                name: submission.toolName,
-                websiteUrl: submission.websiteUrl,
-                description: submission.description || "",
-                category: submission.category || "",
-                pricing: "freemium",
-                status: "published",
-                tags: [],
-                featured: false,
-                verified: false,
-                freeTrial: false,
-
-                source: "user",
-                submittedBy: submission.submitterEmail || "",
-                approvedAt: new Date().toISOString(),
-                approvedBy: email,
-
-                createdAt: new Date().toISOString(),
-                updatedAt: new Date().toISOString(),
-            };
-
-            await db.collection("tools").doc(toolId).set(toolData);
-
-            await submissionRef.delete();
+        if (action === "reject") {
+            await subRef.update({ status: "rejected", reviewedAt: now, reviewedBy: adminUser.email });
 
             await db.collection("moderation_logs").add({
+                type: "submission_rejected",
+                submissionId: id,
+                adminUid: adminUser.uid,
+                adminEmail: adminUser.email,
+                at: now,
+            });
+
+            return NextResponse.json({ ok: true });
+        }
+
+        // action === "approve"
+        const toolName = sub.toolName || sub.name || "";
+        const toolId = slugify(sub.slug || toolName || id) || id;
+
+        const toolRef = db.collection("tools").doc(toolId);
+
+        // إذا كاين tool بنفس id من قبل، ما نخربوش
+        const existing = await toolRef.get();
+        if (existing.exists) {
+            // فقط log و حذف submission
+            await db.collection("moderation_logs").add({
+                type: "submission_approved_tool_exists",
                 submissionId: id,
                 toolId,
-                action: "approved",
-                moderatedBy: email,
-                moderatedAt: new Date().toISOString(),
+                adminUid: adminUser.uid,
+                adminEmail: adminUser.email,
+                at: now,
             });
+
+            await subRef.delete();
+            return NextResponse.json({ ok: true, toolId, note: "tool already existed" });
         }
 
-        if (status === "rejected") {
-            await submissionRef.update({
-                status: "rejected",
-            });
+        // Create tool from submission
+        await toolRef.set(
+            {
+                id: toolId,
+                name: toolName,
+                slug: toolId,
 
-            await db.collection("moderation_logs").add({
-                submissionId: id,
-                action: "rejected",
-                moderatedBy: email,
-                moderatedAt: new Date().toISOString(),
-            });
-        }
+                website: sub.websiteUrl || sub.website || "",
+                tagline: sub.tagline || "",
+                description: sub.description || "",
+                category: (sub.category || "").toLowerCase().trim(), // حاول تخليه نفس taxonomy ديالك
+                pricing: sub.pricing || "",
 
-        return NextResponse.json({ ok: true });
+                status: "published",
+                createdAt: now,
+                updatedAt: now,
+
+                // provenance
+                submittedBy: sub.submitterEmail || "",
+                source: "submission",
+            },
+            { merge: true }
+        );
+
+        // Delete submission
+        await subRef.delete();
+
+        // Moderation log
+        await db.collection("moderation_logs").add({
+            type: "submission_approved",
+            submissionId: id,
+            toolId,
+            adminUid: adminUser.uid,
+            adminEmail: adminUser.email,
+            at: now,
+        });
+
+        return NextResponse.json({ ok: true, toolId });
     } catch (e: any) {
         console.error(e);
-        return NextResponse.json(
-            { error: e?.message || "Server error" },
-            { status: 500 }
-        );
+        const msg = e?.message || "Server error";
+        const status = msg === "UNAUTHENTICATED" ? 401 : msg === "FORBIDDEN" ? 403 : 500;
+        return NextResponse.json({ error: msg }, { status });
     }
 }

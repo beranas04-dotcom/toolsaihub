@@ -9,9 +9,7 @@ export const revalidate = 0;
 
 export default async function AdminSubmissionsPage() {
     const user = await getServerSessionUser();
-
-    if (!user) redirect("/admin/login");
-    if (!user.isAdmin) redirect("/");
+    if (!user?.isAdmin) redirect("/admin/login");
 
     const submissions = await listSubmissions();
 
@@ -20,16 +18,14 @@ export default async function AdminSubmissionsPage() {
             <div className="flex items-center justify-between mb-8">
                 <div>
                     <h1 className="text-3xl font-bold">Admin — Tool Submissions</h1>
-                    <p className="text-muted-foreground mt-2">
-                        Review new tools submitted by users.
-                    </p>
+                    <p className="text-muted-foreground mt-2">Review new tools submitted by users.</p>
                 </div>
                 <Link href="/" className="text-sm font-medium text-primary hover:underline">
                     ← Back to site
                 </Link>
             </div>
 
-            <SubmissionsClient initial={submissions} />
+            <SubmissionsClient initial={submissions as any} />
         </main>
     );
 }
