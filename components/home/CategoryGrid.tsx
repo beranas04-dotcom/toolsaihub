@@ -1,15 +1,22 @@
 import Link from "next/link";
 import { slugifyCategory } from "@/lib/utils";
+import toolsData from "@/data/tools.json";
+import type { Tool } from "@/types";
 
 export type CategoryCard = {
-    key: string;        // ex: "writing"
-    title: string;      // ex: "Writing"
+    key: string;
+    title: string;
     description: string;
-    icon: string;       // emoji ok for now
+    icon: string;
     count: number;
+    slug: string;
 };
 
-const categoryMetadata: Record<string, { icon: string; title: string; description: string }> = {
+// Metadata keys MUST match your category values
+const categoryMetadata: Record<
+    string,
+    { icon: string; title: string; description: string }
+> = {
     writing: { icon: "✍️", title: "Writing", description: "AI copywriting & content tools" },
     images: { icon: "🎨", title: "Images", description: "Image generation & editing" },
     video: { icon: "🎬", title: "Video", description: "Video creation & editing" },
@@ -26,38 +33,66 @@ function prettifyCategory(raw: string) {
     return raw.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
-export default function CategoryGrid({ categories }: { categories: CategoryCard[] }) {
-    const normalized = (categories || [])
-        .map((c) => {
-            const meta = categoryMetadata[c.key];
+function buildFromJson(): CategoryCard[] {
+    const tools = toolsData as Tool[];
+
+    const counts = tools.reduce<Record<string, number>>((acc, t) => {
+        if (!t.category) return acc;
+        acc[t.category] = (acc[t.category] || 0) + 1;
+        return acc;
+    }, {});
+
+    const uniqueCategories = Array.from(
+        new Set(tools.map((t) => t.category).filter((c): c is string => Boolean(c)))
+    );
+
+    return uniqueCategories
+        .map((key) => {
+            const meta = categoryMetadata[key];
+            const title = meta?.title ?? prettifyCategory(key);
+
             return {
-                ...c,
-                title: c.title || meta?.title || prettifyCategory(c.key),
-                icon: c.icon || meta?.icon || "🔹",
-                description: c.description || meta?.description || "AI tools and utilities",
+                key,
+                title,
+                icon: meta?.icon ?? "🔹",
+                description: meta?.description ?? "AI tools and utilities",
+                count: counts[key] ?? 0,
+                slug: slugifyCategory(key),
             };
         })
-        .filter((c) => (c.count ?? 0) > 0)
-        .sort((a, b) => (a.title || "").localeCompare(b.title || ""));
+        .filter((c) => c.count > 0)
+        .sort((a, b) => a.title.localeCompare(b.title));
+}
+
+export default function CategoryGrid({
+    categories,
+}: {
+    categories?: CategoryCard[];
+}) {
+    const list = categories?.length ? categories : buildFromJson();
 
     return (
         <section className="py-16 bg-muted/30">
             <div className="container mx-auto px-4">
                 <div className="text-center mb-12">
                     <h2 className="text-3xl font-bold mb-3">Browse by Category</h2>
-                    <p className="text-muted-foreground text-lg">Find the perfect AI tool for your needs</p>
+                    <p className="text-muted-foreground text-lg">
+                        Find the perfect AI tool for your needs
+                    </p>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                    {normalized.map((c) => (
+                    {list.map((c) => (
                         <Link
                             key={c.key}
-                            href={`/categories/${slugifyCategory(c.key)}`}
+                            href={`/categories/${c.slug}`}
                             aria-label={`Browse ${c.title} AI tools`}
                             className="bg-card border border-border rounded-xl p-6 hover:shadow-lg hover:border-primary/50 transition-all group"
                         >
                             <div className="flex items-start justify-between gap-3">
-                                <div className="text-4xl mb-3 group-hover:scale-110 transition-transform">{c.icon}</div>
+                                <div className="text-4xl mb-3 group-hover:scale-110 transition-transform">
+                                    {c.icon}
+                                </div>
 
                                 <span className="text-xs rounded-full border border-border bg-muted px-2 py-1 text-muted-foreground">
                                     {c.count}
