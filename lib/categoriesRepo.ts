@@ -10,8 +10,8 @@ export type CategoryCount = {
 export async function getCategoryCounts(): Promise<CategoryCount[]> {
     const db = getDb();
 
-    // Small project = OK to aggregate in code.
-    // Only published tools for public homepage.
+    // Small project = OK to aggregate in code during build or revalidate.
+    // Ideally use aggregation query if firebase supports it, or cloud function.
     const snap = await db
         .collection("tools")
         .where("status", "==", "published")
@@ -21,7 +21,8 @@ export async function getCategoryCounts(): Promise<CategoryCount[]> {
 
     snap.docs.forEach((d) => {
         const t = d.data() as Tool;
-        const key = String(t.category || "").trim();
+        if (!t.category) return;
+        const key = t.category.toLowerCase().trim();
         if (!key) return;
         counts.set(key, (counts.get(key) || 0) + 1);
     });
@@ -29,4 +30,15 @@ export async function getCategoryCounts(): Promise<CategoryCount[]> {
     return Array.from(counts.entries())
         .map(([key, count]) => ({ key, count }))
         .sort((a, b) => a.key.localeCompare(b.key));
+}
+
+export async function getHomepageCategories() {
+    const counts = await getCategoryCounts();
+
+    return counts.map((c) => ({
+        ...c,
+        title: "", // Filled by UI component
+        description: "", // Filled by UI component
+        icon: "", // Filled by UI component
+    }));
 }

@@ -158,14 +158,17 @@ export default function SubmitPage() {
                             className="w-full px-4 py-2 rounded-lg border border-input bg-background focus:ring-2 focus:ring-primary focus:outline-none"
                         >
                             <option value="">Select a category</option>
-                            <option value="Writing">Writing</option>
-                            <option value="Images">Images</option>
-                            <option value="Video">Video</option>
-                            <option value="Audio">Audio</option>
-                            <option value="Coding">Coding</option>
-                            <option value="Marketing">Marketing</option>
-                            <option value="Productivity">Productivity</option>
-                            <option value="Other">Other</option>
+                            <option value="writing">Writing</option>
+                            <option value="images">Images</option>
+                            <option value="video">Video</option>
+                            <option value="audio">Audio</option>
+                            <option value="code">Code</option>
+                            <option value="marketing">Marketing</option>
+                            <option value="productivity">Productivity</option>
+                            <option value="research">Research</option>
+                            <option value="utilities">Utilities</option>
+                            <option value="developer-tools">Developer Tools</option>
+
                         </select>
                     </div>
 
