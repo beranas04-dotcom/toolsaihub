@@ -17,7 +17,7 @@ export type ServerSessionUser = {
 
 export async function getServerSessionUser(): Promise<ServerSessionUser | null> {
     const token =
-        cookies().get("__session")?.value || cookies().get("aitoolshub_token")?.value;
+        cookies().get("aitoolshub_token")?.value || cookies().get("__session")?.value;
 
     if (!token) return null;
 
@@ -38,7 +38,6 @@ export async function getServerSessionUser(): Promise<ServerSessionUser | null> 
     }
 }
 
-/** ✅ Use this in server components / API routes to hard-block non-admins */
 export async function requireAdminUser(): Promise<ServerSessionUser> {
     const user = await getServerSessionUser();
     if (!user) throw new Error("UNAUTHENTICATED");

@@ -1,6 +1,16 @@
 {
   "tools": [
     {
+      "id": "anas",
+      "name": "anas",
+      "slug": "anas",
+      "tagline": "",
+      "description": "good tool",
+      "category": "images",
+      "tags": [],
+      "pricing": ""
+    },
+    {
       "id": "canva",
       "name": "Canva",
       "slug": "canva",
@@ -13,6 +23,16 @@
         "marketing"
       ],
       "pricing": "Freemium, Pro $14.99/mo"
+    },
+    {
+      "id": "canvapro",
+      "name": "canvaPro",
+      "slug": "canvapro",
+      "tagline": "",
+      "description": "",
+      "category": "Images",
+      "tags": [],
+      "pricing": "freemium"
     },
     {
       "id": "consensus",
@@ -419,5 +439,5 @@
       "pricing": "Freemium, Paid from $12/mo"
     }
   ],
-  "generatedAt": "2026-02-11T19:54:43.001Z"
+  "generatedAt": "2026-02-13T19:29:55.305Z"
 }

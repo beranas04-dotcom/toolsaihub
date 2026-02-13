@@ -22,13 +22,6 @@ function normalizeId(input: string) {
         .replace(/(^-|-$)/g, "");
 }
 
-function ensureHttps(url: string) {
-    const v = String(url || "").trim();
-    if (!v) return "";
-    if (/^https?:\/\//i.test(v)) return v;
-    return `https://${v}`;
-}
-
 export async function listSubmissions(): Promise<Submission[]> {
     const db = getAdminDb();
 
@@ -41,17 +34,17 @@ export async function listSubmissions(): Promise<Submission[]> {
         const data = d.data() as any;
 
         const createdAt =
-            data.createdAt instanceof admin.firestore.Timestamp
+            data.createdAt?.toDate?.() instanceof Date
                 ? data.createdAt.toDate().toISOString()
                 : String(data.createdAt || new Date().toISOString());
 
         return {
             id: d.id,
-            toolName: String(data.toolName || ""),
-            websiteUrl: String(data.websiteUrl || ""),
-            description: String(data.description || ""),
-            category: String(data.category || ""),
-            submitterEmail: String(data.submitterEmail || ""),
+            toolName: data.toolName || "",
+            websiteUrl: data.websiteUrl || "",
+            description: data.description || "",
+            category: data.category || "",
+            submitterEmail: data.submitterEmail || "",
             status: (data.status || "pending") as any,
             createdAt,
         };
@@ -59,15 +52,18 @@ export async function listSubmissions(): Promise<Submission[]> {
 }
 
 /**
- * ✅ Approve: submission -> tool (tools collection), delete from submissions, write log
+ * ✅ Approve = creates Tool (pending) + deletes submission + logs moderation
  */
 export async function approveSubmission(args: {
     submissionId: string;
-    moderatorUid: string;
-    moderatorEmail: string;
+    adminUid: string;
+    adminEmail: string;
 }) {
     const db = getAdminDb();
-    const submissionRef = db.collection("submissions").doc(args.submissionId);
+    const { submissionId, adminUid, adminEmail } = args;
+
+    const submissionRef = db.collection("submissions").doc(submissionId);
+    const logsRef = db.collection("moderation_logs").doc();
 
     await db.runTransaction(async (tx) => {
         const subSnap = await tx.get(submissionRef);
@@ -75,58 +71,67 @@ export async function approveSubmission(args: {
 
         const sub = subSnap.data() as any;
 
-        const name = String(sub.toolName || "").trim();
-        const websiteUrl = ensureHttps(sub.websiteUrl || "");
-        const description = String(sub.description || "").trim();
+        const toolName = String(sub.toolName || "").trim();
+        const websiteUrl = String(sub.websiteUrl || "").trim();
         const category = String(sub.category || "").trim();
-        const submitterEmail = String(sub.submitterEmail || "").trim();
 
-        if (!name) throw new Error("Submission missing toolName");
-        if (!websiteUrl) throw new Error("Submission missing websiteUrl");
+        if (!toolName || !websiteUrl || !category) {
+            throw new Error("Submission missing required fields (toolName/websiteUrl/category)");
+        }
 
-        const id = normalizeId(sub.id || name);
-        const now = admin.firestore.FieldValue.serverTimestamp();
+        const toolId = normalizeId(sub.slug || toolName);
+        if (!toolId) throw new Error("Invalid tool id");
 
-        const toolRef = db.collection("tools").doc(id);
-        const logRef = db.collection("moderation_logs").doc();
+        const toolRef = db.collection("tools").doc(toolId);
 
-        // Tool entry (starts as draft by default; admin can publish later)
-        tx.set(
-            toolRef,
-            {
-                id,
-                slug: id,
-                name,
-                websiteUrl,
-                description,
-                category,
-                status: "draft",
-                featured: false,
-                verified: false,
-                freeTrial: false,
-                tags: [],
-                tagline: "",
-                affiliateUrl: "",
-                logo: "",
-                createdAt: now,
-                updatedAt: now,
+        // إذا tool موجود من قبل، من الأفضل ما نعاودوش إنشاءه
+        const existingTool = await tx.get(toolRef);
+        if (existingTool.exists) {
+            throw new Error("Tool already exists with same slug/id");
+        }
 
-                // provenance
-                source: "submission",
-                submissionId: args.submissionId,
-                submitterEmail: submitterEmail || null,
-            },
-            { merge: true }
-        );
+        const nowIso = new Date().toISOString();
+
+        // ✅ Tool يدخل pending باش مايبانش فـ public حتى Publish
+        tx.set(toolRef, {
+            id: toolId,
+            slug: toolId,
+            name: toolName,
+            websiteUrl,
+            tagline: String(sub.tagline || "").trim(),
+            description: String(sub.description || "").trim(),
+            category,
+            pricing: String(sub.pricing || "freemium"),
+            tags: Array.isArray(sub.tags) ? sub.tags : [],
+            status: "pending",
+            featured: false,
+            verified: false,
+            freeTrial: Boolean(sub.freeTrial),
+
+            // tracking
+            source: "submission",
+            submissionId,
+
+            createdAt: nowIso,
+            updatedAt: nowIso,
+            lastUpdated: nowIso.slice(0, 10),
+            reviewedBy: "AIToolsHub Team",
+        }, { merge: true });
 
         // moderation log
-        tx.set(logRef, {
-            type: "submission_approved",
-            submissionId: args.submissionId,
-            toolId: id,
-            moderatorUid: args.moderatorUid,
-            moderatorEmail: args.moderatorEmail,
-            createdAt: now,
+        tx.set(logsRef, {
+            action: "approve_submission",
+            submissionId,
+            toolId,
+            adminUid,
+            adminEmail,
+            createdAt: admin.firestore.FieldValue.serverTimestamp(),
+            meta: {
+                toolName,
+                websiteUrl,
+                category,
+                submitterEmail: String(sub.submitterEmail || ""),
+            },
         });
 
         // delete submission
@@ -137,45 +142,42 @@ export async function approveSubmission(args: {
 }
 
 /**
- * ✅ Reject: mark rejected + log (keep submission for record)
+ * ✅ Reject = delete submission + log
  */
 export async function rejectSubmission(args: {
     submissionId: string;
-    moderatorUid: string;
-    moderatorEmail: string;
+    adminUid: string;
+    adminEmail: string;
     reason?: string;
 }) {
     const db = getAdminDb();
-    const submissionRef = db.collection("submissions").doc(args.submissionId);
+    const { submissionId, adminUid, adminEmail, reason } = args;
+
+    const submissionRef = db.collection("submissions").doc(submissionId);
+    const logsRef = db.collection("moderation_logs").doc();
 
     await db.runTransaction(async (tx) => {
         const subSnap = await tx.get(submissionRef);
         if (!subSnap.exists) throw new Error("Submission not found");
 
-        const logRef = db.collection("moderation_logs").doc();
-        const now = admin.firestore.FieldValue.serverTimestamp();
+        const sub = subSnap.data() as any;
 
-        tx.set(
-            submissionRef,
-            {
-                status: "rejected",
-                rejectedAt: now,
-                rejectReason: String(args.reason || ""),
-                moderatedBy: args.moderatorUid,
-                moderatedByEmail: args.moderatorEmail,
-                updatedAt: now,
+        tx.set(logsRef, {
+            action: "reject_submission",
+            submissionId,
+            adminUid,
+            adminEmail,
+            reason: String(reason || ""),
+            createdAt: admin.firestore.FieldValue.serverTimestamp(),
+            meta: {
+                toolName: String(sub.toolName || ""),
+                websiteUrl: String(sub.websiteUrl || ""),
+                category: String(sub.category || ""),
+                submitterEmail: String(sub.submitterEmail || ""),
             },
-            { merge: true }
-        );
-
-        tx.set(logRef, {
-            type: "submission_rejected",
-            submissionId: args.submissionId,
-            moderatorUid: args.moderatorUid,
-            moderatorEmail: args.moderatorEmail,
-            reason: String(args.reason || ""),
-            createdAt: now,
         });
+
+        tx.delete(submissionRef);
     });
 
     return { ok: true };
