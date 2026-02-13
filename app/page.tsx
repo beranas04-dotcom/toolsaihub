@@ -10,6 +10,7 @@ import NewsletterForm from "@/components/newsletter/NewsletterForm";
 
 import { getFeaturedTools } from "@/lib/getFeaturedTools";
 import { getAllTools, getRecentlyUpdatedTools } from "@/lib/toolsRepo";
+import { Tool } from "@/types";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -17,7 +18,7 @@ export const revalidate = 0;
 export default async function HomePage() {
     const allTools = await getAllTools();
 
-    let featuredTools: any[] = [];
+    let featuredTools: Tool[] = [];
     try {
         featuredTools = await getFeaturedTools(6);
     } catch (e) {
@@ -33,9 +34,10 @@ export default async function HomePage() {
 
             <Stats toolCount={allTools.length} />
 
-            <CategoryGrid tools={allTools as any} />
+            <CategoryGrid />
 
-            <FeaturedTools tools={featuredTools as any} />
+
+            <FeaturedTools tools={featuredTools} />
 
             {/* Latest Tools */}
             <section className="py-16 bg-background">
@@ -59,7 +61,7 @@ export default async function HomePage() {
 
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                         {latestTools.map((tool) => (
-                            <ToolCard key={tool.id} tool={tool as any} />
+                            <ToolCard key={tool.id} tool={tool} />
                         ))}
                     </div>
 

@@ -3,16 +3,6 @@ import { slugifyCategory } from "@/lib/utils";
 import toolsData from "@/data/tools.json";
 import type { Tool } from "@/types";
 
-export type CategoryCard = {
-    key: string;
-    title: string;
-    description: string;
-    icon: string;
-    count: number;
-    slug: string;
-};
-
-// Metadata keys MUST match your category values
 const categoryMetadata: Record<
     string,
     { icon: string; title: string; description: string }
@@ -33,7 +23,7 @@ function prettifyCategory(raw: string) {
     return raw.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
-function buildFromJson(): CategoryCard[] {
+export default function CategoryGrid() {
     const tools = toolsData as Tool[];
 
     const counts = tools.reduce<Record<string, number>>((acc, t) => {
@@ -46,14 +36,12 @@ function buildFromJson(): CategoryCard[] {
         new Set(tools.map((t) => t.category).filter((c): c is string => Boolean(c)))
     );
 
-    return uniqueCategories
+    const categories = uniqueCategories
         .map((key) => {
             const meta = categoryMetadata[key];
-            const title = meta?.title ?? prettifyCategory(key);
-
             return {
                 key,
-                title,
+                title: meta?.title ?? prettifyCategory(key),
                 icon: meta?.icon ?? "🔹",
                 description: meta?.description ?? "AI tools and utilities",
                 count: counts[key] ?? 0,
@@ -62,14 +50,6 @@ function buildFromJson(): CategoryCard[] {
         })
         .filter((c) => c.count > 0)
         .sort((a, b) => a.title.localeCompare(b.title));
-}
-
-export default function CategoryGrid({
-    categories,
-}: {
-    categories?: CategoryCard[];
-}) {
-    const list = categories?.length ? categories : buildFromJson();
 
     return (
         <section className="py-16 bg-muted/30">
@@ -82,7 +62,7 @@ export default function CategoryGrid({
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                    {list.map((c) => (
+                    {categories.map((c) => (
                         <Link
                             key={c.key}
                             href={`/categories/${c.slug}`}
@@ -93,7 +73,6 @@ export default function CategoryGrid({
                                 <div className="text-4xl mb-3 group-hover:scale-110 transition-transform">
                                     {c.icon}
                                 </div>
-
                                 <span className="text-xs rounded-full border border-border bg-muted px-2 py-1 text-muted-foreground">
                                     {c.count}
                                 </span>
