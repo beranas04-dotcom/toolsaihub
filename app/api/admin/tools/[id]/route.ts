@@ -4,45 +4,53 @@ import { getAdminDb } from "@/lib/firebaseAdmin";
 
 export const dynamic = "force-dynamic";
 
-const ALLOWED_FIELDS = [
-    "name",
-    "tagline",
-    "description",
-    "category",
-    "tags",
-    "pricing",
-    "website",
-    "affiliateUrl",
-    "logo",
-    "featured",
-    "verified",
-    "freeTrial",
-    "status",
-    "features",
-    "pros",
-    "cons",
-    "useCases",
-    "slug",
-] as const;
-
-type AllowedField = (typeof ALLOWED_FIELDS)[number];
+function normalizeId(input: string) {
+    return String(input || "")
+        .toLowerCase()
+        .trim()
+        .replace(/&/g, "and")
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/(^-|-$)/g, "");
+}
 
 export async function PATCH(req: Request, { params }: { params: { id: string } }) {
     try {
         await requireAdminUser();
 
-        const id = params.id; // ✅ IMPORTANT: keep raw docId, no normalize
-        const body = await req.json().catch(() => ({}));
+        const id = normalizeId(params.id);
+        const body = (await req.json().catch(() => ({}))) as Record<string, any>;
 
         const updates: Record<string, any> = {};
 
-        for (const k of ALLOWED_FIELDS) {
-            if (k in body) updates[k as AllowedField] = (body as any)[k];
-        }
+        // ✅ accept both keys, but store in `website`
+        if ("websiteUrl" in body && !("website" in body)) body.website = body.websiteUrl;
 
-        // Backward compatibility if old UI sends websiteUrl
-        if ("websiteUrl" in body && !("website" in body)) {
-            updates.website = (body as any).websiteUrl;
+        const allowed = [
+            "name",
+            "tagline",
+            "description",
+            "category",
+            "tags",
+            "pricing",
+            "website",          // ✅ important
+            "affiliateUrl",
+            "logo",
+            "featured",
+            "verified",
+            "freeTrial",
+            "status",
+            "features",
+            "pros",
+            "cons",
+            "useCases",
+            "reviewCount",
+            "rating",
+            "lastUpdated",
+            "reviewedBy",
+        ];
+
+        for (const k of allowed) {
+            if (k in body) updates[k] = body[k];
         }
 
         updates.updatedAt = new Date().toISOString();
@@ -62,9 +70,8 @@ export async function DELETE(_req: Request, { params }: { params: { id: string }
     try {
         await requireAdminUser();
 
-        const id = params.id; // ✅ keep raw docId
+        const id = normalizeId(params.id);
         const db = getAdminDb();
-
         await db.collection("tools").doc(id).delete();
 
         return NextResponse.json({ ok: true });
