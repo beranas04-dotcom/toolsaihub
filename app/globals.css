@@ -96,3 +96,24 @@
 html {
   scroll-behavior: smooth;
 }
+/* hide scrollbar but keep scroll */
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+/* hide scrollbar but keep scroll */
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+@keyframes scroll {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+.animate-scroll {
+  display: flex;
+  width: max-content;
+  animation: scroll 30s linear infinite;
+}

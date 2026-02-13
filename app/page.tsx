@@ -2,7 +2,7 @@ import Link from "next/link";
 import ToolCard from "@/components/tools/ToolCard";
 
 import Hero from "@/components/home/Hero";
-import CategoryGrid from "@/components/home/CategoryGrid";
+import CategoryCarousel from "@/components/home/CategoryCarousel";
 import FeaturedTools from "@/components/home/FeaturedTools";
 import Stats from "@/components/home/Stats";
 import CTA from "@/components/home/CTA";
@@ -34,7 +34,8 @@ export default async function HomePage() {
 
             <Stats toolCount={allTools.length} />
 
-            <CategoryGrid />
+            <CategoryCarousel />
+
 
 
             <FeaturedTools tools={featuredTools} />
