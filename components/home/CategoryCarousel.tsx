@@ -174,9 +174,9 @@ export default function CategoryCarousel() {
             <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
                 <div className="flex items-end justify-between gap-6 mb-8">
                     <div>
-                        <h2 className="text-3xl font-bold">Browse by Category</h2>
+                        <h2 className="text-3xl font-bold">Browse AI Tools by Category</h2>
                         <p className="text-muted-foreground mt-2 max-w-2xl">
-                            Pick a category to see the best tools, pricing, and top use cases — curated for speed.
+                            Find the best AI tools for your exact needs — from writing and design to coding, marketing, and productivity. Each category is carefully curated to help you save time and get results faster.
                         </p>
                     </div>
 
