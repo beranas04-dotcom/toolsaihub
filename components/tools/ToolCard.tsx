@@ -18,7 +18,7 @@ function getDomain(url?: string) {
 export default function ToolCard({ tool }: { tool: Tool }) {
     const hasOut = Boolean(tool.affiliateUrl || tool.website);
     const domain = getDomain(tool.website || tool.affiliateUrl);
-    const outUrl = `/api/out?toolId=${encodeURIComponent(tool.id)}`;
+    const outUrl = `/api/out?toolId=${encodeURIComponent(tool.slug || tool.id)}`;
 
     return (
         <div className="group relative bg-card border border-border rounded-2xl p-6 hover:shadow-xl hover:border-primary/40 transition-all duration-300 flex flex-col h-full">
@@ -40,7 +40,7 @@ export default function ToolCard({ tool }: { tool: Tool }) {
                         </Link>
 
                         {tool.pricing ? (
-                            <span className="shrink-0 text-[11px] font-medium bg-muted px-2 py-1 rounded max-w-[170px] truncate">
+                            <span className="shrink-0 text-[11px] font-medium bg-muted px-2 py-1 rounded-full max-w-[160px] truncate whitespace-nowrap">
                                 {tool.pricing}
                             </span>
                         ) : null}
@@ -82,7 +82,11 @@ export default function ToolCard({ tool }: { tool: Tool }) {
             {/* FOOTER */}
             <div className="mt-auto pt-6 flex flex-col gap-3">
                 <div className="flex items-center justify-between text-xs text-muted-foreground">
-                    {domain ? <span className="truncate max-w-[200px]">🔗 {domain}</span> : <span />}
+                    {domain ? (
+                        <span className="truncate max-w-[180px]">🔗 {domain}</span>
+                    ) : (
+                        <span className="truncate max-w-[180px]">No website</span>
+                    )}
                 </div>
 
                 <div className="flex items-center gap-3">
@@ -106,9 +110,9 @@ export default function ToolCard({ tool }: { tool: Tool }) {
                                     destination: "out",
                                 })
                             }
-                            className="px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-semibold hover:opacity-95 transition"
+                            className="text-center text-sm font-semibold bg-primary text-primary-foreground rounded-lg py-2 px-4 hover:opacity-90 transition"
                         >
-                            Visit →
+                            Visit
                         </a>
                     ) : null}
                 </div>

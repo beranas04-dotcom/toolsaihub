@@ -1,5 +1,5 @@
-import toolsData from "@/data/tools.json";
 import { NextRequest, NextResponse } from "next/server";
+import { getDb } from "@/lib/firebaseAdmin";
 
 function safeHttpUrl(u?: string | null) {
     if (!u) return null;
@@ -12,45 +12,56 @@ function safeHttpUrl(u?: string | null) {
     }
 }
 
+function normalizeId(input: string) {
+    return String(input || "")
+        .toLowerCase()
+        .trim()
+        .replace(/&/g, "and")
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/(^-|-$)/g, "");
+}
+
+export const dynamic = "force-dynamic";
+
 export async function GET(request: NextRequest) {
     const sp = request.nextUrl.searchParams;
 
-    // Old param (optional)
+    // legacy: /api/out?url=https://...
     const rawUrl = sp.get("url");
-    const url = safeHttpUrl(rawUrl);
-
-    // New params
-    const toolIdOrSlug = (sp.get("toolId") || sp.get("id") || "").trim();
-
-    // 1) Keep old behavior if url is provided
-    if (url) {
-        const res = NextResponse.redirect(url, { status: 302 });
+    const direct = safeHttpUrl(rawUrl);
+    if (direct) {
+        const res = NextResponse.redirect(direct, { status: 302 });
         res.headers.set("Cache-Control", "no-store");
         return res;
     }
 
-    // 2) Otherwise redirect by toolId OR slug
+    // new: /api/out?toolId=...
+    const toolIdOrSlug = (sp.get("toolId") || sp.get("id") || "").trim();
     if (!toolIdOrSlug) {
         return new NextResponse("Missing toolId (or valid url) parameter", { status: 400 });
     }
 
-    const key = toolIdOrSlug.toLowerCase();
+    const key = normalizeId(toolIdOrSlug);
+    const db = getDb();
 
-    const tool = (toolsData as any[]).find((t) => {
-        const id = String(t?.id || "").toLowerCase();
-        const slug = String(t?.slug || "").toLowerCase();
-        return id === key || slug === key;
-    });
+    // 1) doc id = key
+    const docSnap = await db.collection("tools").doc(key).get();
+    let tool: any = docSnap.exists ? docSnap.data() : null;
 
+    // 2) fallback: slug == key
     if (!tool) {
-        return new NextResponse("Tool not found", { status: 404 });
+        const q = await db.collection("tools").where("slug", "==", key).limit(1).get();
+        if (!q.empty) tool = q.docs[0].data();
     }
 
-    const target = safeHttpUrl(tool?.affiliateUrl) || safeHttpUrl(tool?.website);
+    if (!tool) return new NextResponse("Tool not found", { status: 404 });
 
-    if (!target) {
-        return new NextResponse("Tool has no valid website/affiliateUrl", { status: 400 });
-    }
+    const target =
+        safeHttpUrl(tool?.affiliateUrl) ||
+        safeHttpUrl(tool?.website) ||
+        safeHttpUrl(tool?.websiteUrl); // (احتياط: إلى كنتي كتستعمل websiteUrl فشي بلاصة)
+
+    if (!target) return new NextResponse("Tool has no valid website/affiliateUrl", { status: 400 });
 
     const res = NextResponse.redirect(target, { status: 302 });
     res.headers.set("Cache-Control", "no-store");
