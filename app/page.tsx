@@ -3,7 +3,8 @@ import ToolCard from "@/components/tools/ToolCard";
 
 import Hero from "@/components/home/Hero";
 import CategoryCarousel from "@/components/home/CategoryCarousel";
-import FeaturedTools from "@/components/home/FeaturedTools";
+import FeaturedToolsCarousel from "@/components/home/FeaturedToolsCarousel";
+
 import Stats from "@/components/home/Stats";
 import CTA from "@/components/home/CTA";
 import NewsletterForm from "@/components/newsletter/NewsletterForm";
@@ -38,7 +39,9 @@ export default async function HomePage() {
 
 
 
-            <FeaturedTools tools={featuredTools} />
+            <FeaturedToolsCarousel tools={featuredTools as any} />
+
+
 
             {/* Latest Tools */}
             <section className="py-16 bg-background">

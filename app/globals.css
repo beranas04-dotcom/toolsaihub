@@ -117,3 +117,35 @@ html {
   width: max-content;
   animation: scroll 30s linear infinite;
 }
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* === Marquee (infinite auto-scroll) === */
+.marquee {
+  --marquee-duration: 50s;
+}
+
+.marquee__track {
+  display: flex;
+  gap: 16px;
+  width: max-content;
+  animation: marquee var(--marquee-duration) linear infinite;
+  will-change: transform;
+  padding-left: 16px;
+  padding-right: 16px;
+}
+
+@keyframes marquee {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    /* move half the track because we duplicated the items */
+    transform: translateX(-50%);
+  }
+}

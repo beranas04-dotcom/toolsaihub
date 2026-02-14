@@ -21,7 +21,6 @@ export default function ToolCard({ tool }: { tool: Tool }) {
 
     return (
         <div className="group relative bg-card border border-border rounded-2xl p-6 hover:shadow-xl hover:border-primary/40 transition-all duration-300 flex flex-col h-full">
-
             {/* HEADER */}
             <div className="flex items-start gap-4">
                 <ToolLogo
