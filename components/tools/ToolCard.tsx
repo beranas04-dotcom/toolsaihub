@@ -98,23 +98,26 @@ export default function ToolCard({ tool }: { tool: Tool }) {
                         View Details
                     </Link>
 
-                    {hasOut && (
-                        <Link
+                    {hasOut ? (
+                        <a
                             href={`/api/out?toolId=${tool.id}`}
                             target="_blank"
                             rel="sponsored noopener noreferrer"
                             onClick={() =>
-                                trackEvent("affiliate_click", {
+                                trackEvent("outbound_click", {
                                     tool_id: tool.id,
                                     tool_name: tool.name,
                                     category: tool.category || "",
+                                    destination: "out",
                                 })
                             }
-                            className="flex-1 text-center text-sm font-semibold bg-primary text-primary-foreground rounded-lg py-2 hover:opacity-95 transition"
+                            className="text-sm font-semibold text-primary hover:underline"
                         >
-                            Visit Website
-                        </Link>
-                    )}
+                            Visit →
+                        </a>
+                    ) : null}
+
+
                 </div>
             </div>
         </div>
