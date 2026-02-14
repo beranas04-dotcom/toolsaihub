@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Tool } from "@/types";
+import type { Tool } from "@/types";
 import { trackEvent } from "@/lib/analytics";
 import ToolLogo from "@/components/tools/ToolLogo";
 
@@ -18,6 +18,7 @@ function getDomain(url?: string) {
 export default function ToolCard({ tool }: { tool: Tool }) {
     const hasOut = Boolean(tool.affiliateUrl || tool.website);
     const domain = getDomain(tool.website || tool.affiliateUrl);
+    const outUrl = `/api/out?toolId=${encodeURIComponent(tool.id)}`;
 
     return (
         <div className="group relative bg-card border border-border rounded-2xl p-6 hover:shadow-xl hover:border-primary/40 transition-all duration-300 flex flex-col h-full">
@@ -31,17 +32,25 @@ export default function ToolCard({ tool }: { tool: Tool }) {
                 />
 
                 <div className="min-w-0 flex-1">
-                    <Link href={`/tools/${tool.slug || tool.id}`}>
-                        <h3 className="text-lg font-semibold leading-tight group-hover:text-primary transition-colors line-clamp-1">
-                            {tool.name}
-                        </h3>
-                    </Link>
+                    <div className="flex items-start justify-between gap-3">
+                        <Link href={`/tools/${tool.slug || tool.id}`} className="min-w-0">
+                            <h3 className="text-lg font-semibold leading-tight group-hover:text-primary transition-colors line-clamp-1">
+                                {tool.name}
+                            </h3>
+                        </Link>
 
-                    {tool.tagline && (
+                        {tool.pricing ? (
+                            <span className="shrink-0 text-[11px] font-medium bg-muted px-2 py-1 rounded max-w-[170px] truncate">
+                                {tool.pricing}
+                            </span>
+                        ) : null}
+                    </div>
+
+                    {tool.tagline ? (
                         <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
                             {tool.tagline}
                         </p>
-                    )}
+                    ) : null}
                 </div>
             </div>
 
@@ -72,25 +81,11 @@ export default function ToolCard({ tool }: { tool: Tool }) {
 
             {/* FOOTER */}
             <div className="mt-auto pt-6 flex flex-col gap-3">
-
-                {/* Meta */}
                 <div className="flex items-center justify-between text-xs text-muted-foreground">
-                    {tool.pricing && (
-                        <span className="bg-muted px-2 py-1 rounded font-medium">
-                            {tool.pricing}
-                        </span>
-                    )}
-
-                    {domain && (
-                        <span className="truncate max-w-[120px] text-right">
-                            {domain}
-                        </span>
-                    )}
+                    {domain ? <span className="truncate max-w-[200px]">🔗 {domain}</span> : <span />}
                 </div>
 
-                {/* ACTIONS */}
                 <div className="flex items-center gap-3">
-
                     <Link
                         href={`/tools/${tool.slug || tool.id}`}
                         className="flex-1 text-center text-sm font-medium border border-border rounded-lg py-2 hover:bg-muted transition"
@@ -100,7 +95,7 @@ export default function ToolCard({ tool }: { tool: Tool }) {
 
                     {hasOut ? (
                         <a
-                            href={`/api/out?toolId=${tool.id}`}
+                            href={outUrl}
                             target="_blank"
                             rel="sponsored noopener noreferrer"
                             onClick={() =>
@@ -111,13 +106,11 @@ export default function ToolCard({ tool }: { tool: Tool }) {
                                     destination: "out",
                                 })
                             }
-                            className="text-sm font-semibold text-primary hover:underline"
+                            className="px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-semibold hover:opacity-95 transition"
                         >
                             Visit →
                         </a>
                     ) : null}
-
-
                 </div>
             </div>
         </div>
