@@ -1,119 +1,146 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { approveSubmissionAction, rejectSubmissionAction } from "./actions";
 
 type Submission = {
     id: string;
-    toolName: string;
-    websiteUrl: string;
+    name: string;
+    website: string;
+    tagline: string;
     description?: string;
-    category?: string;
-    submitterEmail?: string;
+    category: string;
+    pricing: string;
+    email: string;
+    affiliateUrl?: string | null;
+    logo?: string | null;
+    tags?: string[];
     status: "pending" | "approved" | "rejected";
-    createdAt: string;
+    createdAt?: string | null;
 };
 
 export default function SubmissionsClient({ initialSubmissions }: { initialSubmissions: Submission[] }) {
     const [items, setItems] = useState<Submission[]>(initialSubmissions);
     const [busyId, setBusyId] = useState<string | null>(null);
+    const [error, setError] = useState<string | null>(null);
 
-    const hasItems = useMemo(() => items.length > 0, [items.length]);
+    const pendingCount = useMemo(() => items.length, [items]);
 
-    async function act(id: string, action: "approve" | "reject") {
+    async function approve(id: string) {
+        setError(null);
+        setBusyId(id);
+
+        try {
+            const res = await approveSubmissionAction(id);
+            if (!res.ok) throw new Error((res as any).error || "Approve failed");
+
+            // ✅ حيد من اللائحة
+            setItems((prev) => prev.filter((x) => x.id !== id));
+
+            // ✅ مشي مباشرة للتعديل ديال tool الجديد
+            const toolId = (res as any).toolId as string | undefined;
+            if (toolId) {
+                window.location.href = `/admin/tools/edit/${toolId}`;
+                return;
+            }
+        } catch (e: any) {
+            setError(e?.message || "Something went wrong");
+        } finally {
+            setBusyId(null);
+        }
+    }
+
+    async function reject(id: string) {
+        setError(null);
+        const reason = prompt("Reject reason (optional):") || "";
         setBusyId(id);
         try {
-            const res = await fetch(`/api/admin/submissions/${id}`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ action }),
-                credentials: "include",
-            });
-
-            const data = await res.json().catch(() => ({}));
-            if (!res.ok) throw new Error(data?.error || "Failed");
-
-            // remove item from UI
+            const res = await rejectSubmissionAction(id, reason);
+            if (!res.ok) throw new Error((res as any).error || "Reject failed");
             setItems((prev) => prev.filter((x) => x.id !== id));
         } catch (e: any) {
-            alert(e?.message || "Action failed. Check Vercel logs.");
+            setError(e?.message || "Something went wrong");
         } finally {
             setBusyId(null);
         }
     }
 
     return (
-        <main className="container mx-auto px-4 py-12 max-w-6xl">
-            <div className="mb-8">
-                <h1 className="text-3xl font-bold">Admin — Tool Submissions</h1>
-                <p className="text-muted-foreground mt-2">
-                    Approve a submission to create a <b>pending</b> tool, or reject it.
-                </p>
+        <main className="container mx-auto px-6 py-12 max-w-6xl">
+            <div className="flex items-end justify-between gap-4 mb-6">
+                <div>
+                    <h1 className="text-3xl font-bold">Submissions</h1>
+                    <p className="text-sm text-muted-foreground">{pendingCount} pending</p>
+                </div>
             </div>
 
-            {!hasItems ? (
-                <div className="bg-muted/30 border border-border rounded-xl p-10 text-center">
-                    <h2 className="text-xl font-semibold mb-2">No submissions</h2>
-                    <p className="text-muted-foreground">New user submissions will appear here.</p>
+            {error ? (
+                <div className="mb-5 rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-200">
+                    {error}
                 </div>
-            ) : (
-                <div className="space-y-4">
-                    {items.map((s) => {
-                        const busy = busyId === s.id;
+            ) : null}
 
-                        return (
-                            <div key={s.id} className="bg-card border border-border rounded-xl p-6">
-                                <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
-                                    <div className="flex-1">
-                                        <div className="flex flex-wrap items-center gap-3">
-                                            <h2 className="text-xl font-bold">{s.toolName}</h2>
-                                            <span className="text-xs px-2 py-1 rounded-full bg-muted border border-border">
-                                                {s.status}
+            <div className="grid gap-4">
+                {items.map((s) => (
+                    <div key={s.id} className="rounded-2xl border border-border bg-card p-5">
+                        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+                            <div className="min-w-0">
+                                <div className="flex items-center gap-2">
+                                    <div className="font-semibold text-lg truncate">{s.name}</div>
+                                    <span className="text-xs rounded-full bg-muted px-2 py-1">{s.category}</span>
+                                    <span className="text-xs rounded-full bg-muted px-2 py-1">{s.pricing}</span>
+                                </div>
+
+                                <a href={s.website} target="_blank" className="text-sm text-primary hover:underline break-all">
+                                    {s.website}
+                                </a>
+
+                                <div className="mt-2 text-sm text-muted-foreground">{s.tagline}</div>
+
+                                {s.tags?.length ? (
+                                    <div className="mt-3 flex flex-wrap gap-2">
+                                        {s.tags.map((t) => (
+                                            <span key={t} className="text-[11px] px-2 py-1 rounded-full bg-primary/10 text-primary">
+                                                {t}
                                             </span>
-                                        </div>
-
-                                        <div className="text-sm text-muted-foreground mt-2 space-y-1">
-                                            <div>
-                                                <span className="font-medium">Website:</span>{" "}
-                                                <a href={s.websiteUrl} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
-                                                    {s.websiteUrl}
-                                                </a>
-                                            </div>
-                                            <div><span className="font-medium">Category:</span> {s.category || "—"}</div>
-                                            <div><span className="font-medium">Submitter:</span> {s.submitterEmail || "—"}</div>
-                                        </div>
-
-                                        {s.description ? (
-                                            <p className="mt-4 text-sm leading-relaxed text-foreground/90">{s.description}</p>
-                                        ) : null}
-
-                                        <div className="mt-4 text-xs text-muted-foreground">
-                                            Submitted: {new Date(s.createdAt).toLocaleString()}
-                                        </div>
+                                        ))}
                                     </div>
+                                ) : null}
 
-                                    <div className="flex gap-2">
-                                        <button
-                                            disabled={busy}
-                                            onClick={() => act(s.id, "approve")}
-                                            className="px-4 py-2 rounded-lg bg-green-600 text-white text-sm font-semibold hover:bg-green-700 disabled:opacity-60"
-                                        >
-                                            {busy ? "..." : "Approve"}
-                                        </button>
-
-                                        <button
-                                            disabled={busy}
-                                            onClick={() => act(s.id, "reject")}
-                                            className="px-4 py-2 rounded-lg bg-red-600 text-white text-sm font-semibold hover:bg-red-700 disabled:opacity-60"
-                                        >
-                                            {busy ? "..." : "Reject"}
-                                        </button>
-                                    </div>
+                                <div className="mt-3 text-xs text-muted-foreground">
+                                    Contact: <span className="font-medium">{s.email}</span>
+                                    {s.createdAt ? (
+                                        <span className="ml-2 opacity-70">• {new Date(s.createdAt).toLocaleString()}</span>
+                                    ) : null}
                                 </div>
                             </div>
-                        );
-                    })}
-                </div>
-            )}
+
+                            <div className="flex gap-2 sm:flex-col sm:min-w-[180px]">
+                                <button
+                                    disabled={busyId === s.id}
+                                    onClick={() => approve(s.id)}
+                                    className="rounded-xl bg-primary px-4 py-2 font-semibold text-primary-foreground hover:opacity-90 disabled:opacity-60"
+                                >
+                                    {busyId === s.id ? "..." : "Approve"}
+                                </button>
+                                <button
+                                    disabled={busyId === s.id}
+                                    onClick={() => reject(s.id)}
+                                    className="rounded-xl border border-border bg-background px-4 py-2 font-semibold hover:bg-muted/40 disabled:opacity-60"
+                                >
+                                    {busyId === s.id ? "..." : "Reject"}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                ))}
+
+                {!items.length ? (
+                    <div className="rounded-2xl border border-border bg-card p-8 text-center text-muted-foreground">
+                        No pending submissions 🎉
+                    </div>
+                ) : null}
+            </div>
         </main>
     );
 }

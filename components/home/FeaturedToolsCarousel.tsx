@@ -100,34 +100,32 @@ export default function FeaturedToolsCarousel({ tools }: { tools: Tool[] }) {
                   hover:border-primary/60 hover:shadow-md transition
                 "
                             >
-                                <header className="flex items-start justify-between gap-3">
-                                    <div className="min-w-0">
-                                        <h3 className="text-lg font-semibold leading-snug">
-                                            <Link
-                                                href={`/tools/${slug}`}
-                                                className="hover:text-primary transition-colors"
-                                            >
-                                                {t.name}
-                                            </Link>
-                                        </h3>
-
-                                        {t.tagline ? (
-                                            <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
-                                                {t.tagline}
-                                            </p>
-                                        ) : (
-                                            <p className="text-sm text-muted-foreground mt-1">
-                                                Explore details, pricing, and use-cases.
-                                            </p>
-                                        )}
-                                    </div>
+                                <header className="min-w-0">
+                                    <h3 className="text-lg font-semibold leading-snug">
+                                        <Link href={`/tools/${slug}`} className="hover:text-primary transition-colors">
+                                            {t.name}
+                                        </Link>
+                                    </h3>
 
                                     {t.pricing ? (
-                                        <span className="shrink-0 text-xs px-2 py-1 rounded-full bg-muted border border-border text-muted-foreground">
-                                            {t.pricing}
-                                        </span>
+                                        <div className="mt-2">
+                                            <span className="inline-flex max-w-full items-center rounded-full bg-muted px-2 py-1 text-[11px] font-medium leading-none">
+                                                <span className="truncate">{t.pricing}</span>
+                                            </span>
+                                        </div>
                                     ) : null}
+
+                                    {t.tagline ? (
+                                        <p className="text-sm text-muted-foreground mt-2 line-clamp-2">
+                                            {t.tagline}
+                                        </p>
+                                    ) : (
+                                        <p className="text-sm text-muted-foreground mt-2">
+                                            Explore details, pricing, and use-cases.
+                                        </p>
+                                    )}
                                 </header>
+
 
                                 <div className="mt-4 flex flex-wrap gap-2 text-xs">
                                     {t.category ? (

@@ -29,11 +29,13 @@ export async function GET(request: NextRequest) {
     // legacy: /api/out?url=https://...
     const rawUrl = sp.get("url");
     const direct = safeHttpUrl(rawUrl);
+
     if (direct) {
         const res = NextResponse.redirect(direct, { status: 302 });
         res.headers.set("Cache-Control", "no-store");
         return res;
     }
+
 
     // new: /api/out?toolId=...
     const toolIdOrSlug = (sp.get("toolId") || sp.get("id") || "").trim();
@@ -62,6 +64,11 @@ export async function GET(request: NextRequest) {
         safeHttpUrl(tool?.websiteUrl); // (احتياط: إلى كنتي كتستعمل websiteUrl فشي بلاصة)
 
     if (!target) return new NextResponse("Tool has no valid website/affiliateUrl", { status: 400 });
+    console.log("OUT CLICK:", {
+        toolId: toolIdOrSlug,
+        target,
+        date: new Date().toISOString(),
+    });
 
     const res = NextResponse.redirect(target, { status: 302 });
     res.headers.set("Cache-Control", "no-store");

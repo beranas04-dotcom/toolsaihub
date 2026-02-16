@@ -33,23 +33,31 @@ function clamp(n: number, min: number, max: number) {
     return Math.max(min, Math.min(max, n));
 }
 
-function Stars({ value }: { value: number }) {
+function Stars({ value, idPrefix }: { value: number; idPrefix: string }) {
     const v = clamp(value || 0, 0, 5);
     const full = Math.floor(v);
     const half = v - full >= 0.5 ? 1 : 0;
     const empty = 5 - full - half;
 
+    const gradId = `${idPrefix}-half`;
+
     const Star = ({ filled }: { filled: "full" | "half" | "empty" }) => (
         <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true" className="shrink-0">
             <defs>
-                <linearGradient id="half">
+                <linearGradient id={gradId}>
                     <stop offset="50%" stopColor="currentColor" />
                     <stop offset="50%" stopColor="transparent" />
                 </linearGradient>
             </defs>
             <path
                 d="M12 17.27l-5.18 3.05 1.64-5.81L3 9.24l6-.52L12 3l3 5.72 6 .52-5.46 5.27 1.64 5.81z"
-                fill={filled === "full" ? "currentColor" : filled === "half" ? "url(#half)" : "transparent"}
+                fill={
+                    filled === "full"
+                        ? "currentColor"
+                        : filled === "half"
+                            ? `url(#${gradId})`
+                            : "transparent"
+                }
                 stroke="currentColor"
                 strokeWidth="1.5"
             />
@@ -58,16 +66,13 @@ function Stars({ value }: { value: number }) {
 
     return (
         <span className="inline-flex items-center gap-1 text-primary">
-            {Array.from({ length: full }).map((_, i) => (
-                <Star key={`f${i}`} filled="full" />
-            ))}
+            {Array.from({ length: full }).map((_, i) => <Star key={`f${i}`} filled="full" />)}
             {half ? <Star filled="half" /> : null}
-            {Array.from({ length: empty }).map((_, i) => (
-                <Star key={`e${i}`} filled="empty" />
-            ))}
+            {Array.from({ length: empty }).map((_, i) => <Star key={`e${i}`} filled="empty" />)}
         </span>
     );
 }
+
 
 export async function generateMetadata({
     params,
@@ -182,7 +187,7 @@ export default async function ToolDetailsPage({
         ],
     };
 
-    const visitHref = `/api/out?toolId=${encodeURIComponent(tool.id)}`;
+    const visitHref = `/api/out?toolId=${encodeURIComponent(tool.slug || tool.id)}`;
     const websiteDomain = getDomain(tool.website);
 
     const lastUpdated =
@@ -291,7 +296,8 @@ export default async function ToolDetailsPage({
                             <div className="mt-4 flex flex-wrap items-center gap-3">
                                 {summary.reviewCount > 0 ? (
                                     <>
-                                        <Stars value={summary.averageRating} />
+                                        <Stars value={summary.averageRating} idPrefix={`summary-${tool.id}`} />
+
                                         <span className="text-sm font-semibold text-foreground">
                                             {summary.averageRating.toFixed(1)}
                                         </span>
@@ -387,12 +393,9 @@ export default async function ToolDetailsPage({
                                     {tool.pros?.length ? (
                                         <ul className="space-y-2">
                                             {tool.pros.map((p) => (
-                                                <li
-                                                    key={p}
-                                                    className="flex items-start gap-2 text-sm text-muted-foreground"
-                                                >
+                                                <li key={p} className="flex items-start gap-2 text-sm text-muted-foreground">
                                                     <span className="mt-0.5">•</span>
-                                                    <span>{p}</span>
+                                                    <span className="break-words">{p}</span>
                                                 </li>
                                             ))}
                                         </ul>
@@ -407,12 +410,9 @@ export default async function ToolDetailsPage({
                                     {tool.cons?.length ? (
                                         <ul className="space-y-2">
                                             {tool.cons.map((c) => (
-                                                <li
-                                                    key={c}
-                                                    className="flex items-start gap-2 text-sm text-muted-foreground"
-                                                >
+                                                <li key={c} className="flex items-start gap-2 text-sm text-muted-foreground">
                                                     <span className="mt-0.5">•</span>
-                                                    <span>{c}</span>
+                                                    <span className="break-words">{c}</span>
                                                 </li>
                                             ))}
                                         </ul>
@@ -420,108 +420,68 @@ export default async function ToolDetailsPage({
                                         <p className="text-sm text-muted-foreground">No cons listed.</p>
                                     )}
                                 </div>
-                                {/* ===== FAQ ===== */}
-                                <section className="rounded-2xl border border-border bg-card p-6 sm:p-8">
-                                    <h2 className="text-xl font-bold mb-6">FAQ</h2>
-
-                                    <div className="space-y-3">
-                                        {[
-                                            {
-                                                q: `What is ${tool.name}?`,
-                                                a:
-                                                    tool.description ||
-                                                    tool.tagline ||
-                                                    `${tool.name} is an AI tool listed on ${siteMetadata.siteName}.`,
-                                            },
-                                            {
-                                                q: `Is ${tool.name} free?`,
-                                                a: tool.pricing
-                                                    ? `${tool.name} pricing: ${tool.pricing}.`
-                                                    : `${tool.name} pricing details are not available yet.`,
-                                            },
-                                            {
-                                                q: `Does ${tool.name} offer a free trial?`,
-                                                a:
-                                                    (tool as any).freeTrial === true
-                                                        ? `Yes, ${tool.name} offers a free trial.`
-                                                        : `No free trial is listed for ${tool.name}.`,
-                                            },
-                                            {
-                                                q: `What are the best use cases for ${tool.name}?`,
-                                                a: tool.useCases?.length
-                                                    ? tool.useCases.slice(0, 5).join(" • ")
-                                                    : `Common use cases include productivity, content creation, and automation (depending on the tool).`,
-                                            },
-                                            {
-                                                q: `Where can I access ${tool.name}?`,
-                                                a: tool.website
-                                                    ? `Official website: ${tool.website}`
-                                                    : `The official website is not available yet.`,
-                                            },
-                                        ].map((item) => (
-                                            <details
-                                                key={item.q}
-                                                className="group rounded-xl border border-border bg-background px-5 py-4"
-                                            >
-                                                <summary className="cursor-pointer list-none font-semibold flex items-center justify-between gap-4">
-                                                    <span className="text-foreground">{item.q}</span>
-                                                    <span className="text-muted-foreground group-open:rotate-180 transition">
-                                                        ▼
-                                                    </span>
-                                                </summary>
-                                                <div className="mt-3 text-sm text-muted-foreground leading-relaxed break-words">
-                                                    {item.a}
-                                                </div>
-                                            </details>
-                                        ))}
-                                    </div>
-                                </section>
-
-                                {tool.useCases?.length ? (
-                                    <section className="rounded-2xl border border-border bg-card p-6 sm:p-8">
-                                        <h2 className="text-xl font-bold mb-6">Use cases</h2>
-
-                                        <div
-                                            className="
-        grid gap-4
-        grid-cols-1
-        sm:grid-cols-2
-        lg:grid-cols-2
-      "
-                                        >
-                                            {tool.useCases.map((u) => (
-                                                <div
-                                                    key={u}
-                                                    className="
-            group
-            flex items-start gap-3
-            rounded-xl
-            border border-border
-            bg-background
-            p-4
-            hover:border-primary/40
-            hover:shadow-sm
-            transition
-          "
-                                                >
-                                                    <span className="mt-0.5 text-primary text-lg shrink-0">✓</span>
-
-                                                    <p className="text-sm text-muted-foreground leading-relaxed break-words">
-                                                        {u}
-                                                    </p>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </section>
-                                ) : null}
-
-
-
                             </div>
                         </section>
                     ) : null}
 
+                    {/* ===== FAQ (outside Pros&Cons) ===== */}
+                    <section className="rounded-2xl border border-border bg-card p-6 sm:p-8">
+                        <h2 className="text-xl font-bold mb-6">FAQ</h2>
 
+                        <div className="space-y-3">
+                            {[
+                                {
+                                    q: `What is ${tool.name}?`,
+                                    a: tool.description || tool.tagline || `${tool.name} is an AI tool listed on ${siteMetadata.siteName}.`,
+                                },
+                                {
+                                    q: `Is ${tool.name} free?`,
+                                    a: tool.pricing ? `${tool.name} pricing: ${tool.pricing}.` : `${tool.name} pricing details are not available yet.`,
+                                },
+                                {
+                                    q: `Does ${tool.name} offer a free trial?`,
+                                    a: (tool as any).freeTrial === true ? `Yes, ${tool.name} offers a free trial.` : `No free trial is listed for ${tool.name}.`,
+                                },
+                                {
+                                    q: `What are the best use cases for ${tool.name}?`,
+                                    a: tool.useCases?.length ? tool.useCases.slice(0, 5).join(" • ") : `Common use cases include productivity, content creation, and automation (depending on the tool).`,
+                                },
+                                {
+                                    q: `Where can I access ${tool.name}?`,
+                                    a: tool.website ? `Official website: ${tool.website}` : `The official website is not available yet.`,
+                                },
+                            ].map((item) => (
+                                <details key={item.q} className="group rounded-xl border border-border bg-background px-5 py-4">
+                                    <summary className="cursor-pointer list-none font-semibold flex items-center justify-between gap-4">
+                                        <span className="text-foreground">{item.q}</span>
+                                        <span className="text-muted-foreground group-open:rotate-180 transition">▼</span>
+                                    </summary>
+                                    <div className="mt-3 text-sm text-muted-foreground leading-relaxed break-words">
+                                        {item.a}
+                                    </div>
+                                </details>
+                            ))}
+                        </div>
+                    </section>
+
+                    {/* ===== Use cases (outside Pros&Cons) ===== */}
+                    {tool.useCases?.length ? (
+                        <section className="rounded-2xl border border-border bg-card p-6 sm:p-8">
+                            <h2 className="text-xl font-bold mb-6">Use cases</h2>
+
+                            <div className="grid gap-4 grid-cols-1 sm:grid-cols-2">
+                                {tool.useCases.map((u) => (
+                                    <div
+                                        key={u}
+                                        className="group flex items-start gap-3 rounded-xl border border-border bg-background p-4 hover:border-primary/40 hover:shadow-sm transition"
+                                    >
+                                        <span className="mt-0.5 text-primary text-lg shrink-0">✓</span>
+                                        <p className="text-sm text-muted-foreground leading-relaxed break-words">{u}</p>
+                                    </div>
+                                ))}
+                            </div>
+                        </section>
+                    ) : null}
                     {/* Reviews section */}
                     <section id="reviews" className="rounded-2xl border border-border bg-card p-6 sm:p-8">
                         <div className="flex items-center justify-between gap-4 mb-4">
@@ -544,7 +504,8 @@ export default async function ToolDetailsPage({
 
                                             {r.rating ? (
                                                 <div className="flex flex-col items-end gap-1">
-                                                    <Stars value={Number(r.rating)} />
+                                                    <Stars value={Number(r.rating)} idPrefix={`review-${r.id}`} />
+
                                                     <span className="text-xs text-muted-foreground">
                                                         {Number(r.rating).toFixed(1)} / 5
                                                     </span>

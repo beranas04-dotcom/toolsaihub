@@ -8,7 +8,6 @@ import ToolCard from "@/components/tools/ToolCard";
 export default function FeaturedTools({ tools }: { tools: Tool[] }) {
     const items = useMemo(() => {
         const safe = (tools || []).filter(Boolean);
-        // duplicate for seamless loop
         return safe.length ? [...safe, ...safe] : [];
     }, [tools]);
 
@@ -33,20 +32,15 @@ export default function FeaturedTools({ tools }: { tools: Tool[] }) {
                     </Link>
                 </div>
 
-                {/* Marquee */}
                 <div className="relative">
-                    {/* fade edges */}
                     <div className="pointer-events-none absolute inset-y-0 left-0 w-10 sm:w-16 bg-gradient-to-r from-background to-transparent z-10" />
                     <div className="pointer-events-none absolute inset-y-0 right-0 w-10 sm:w-16 bg-gradient-to-l from-background to-transparent z-10" />
 
                     <div className="overflow-hidden rounded-2xl border border-border bg-card/20">
-                        <div className="marquee group flex gap-4 p-4">
-                            <div className="marquee__track flex gap-4">
+                        <div className="ath-marquee group flex gap-4 p-4">
+                            <div className="ath-marquee__track flex gap-4">
                                 {items.map((tool, idx) => (
-                                    <div
-                                        key={`${tool.id}-${idx}`}
-                                        className="w-[320px] sm:w-[360px] shrink-0"
-                                    >
+                                    <div key={`${tool.id}-${idx}`} className="w-[320px] sm:w-[360px] shrink-0">
                                         <ToolCard tool={tool} />
                                     </div>
                                 ))}
@@ -60,16 +54,21 @@ export default function FeaturedTools({ tools }: { tools: Tool[] }) {
                 </div>
             </div>
 
-            {/* CSS animation */}
             <style jsx global>{`
-        .marquee__track {
+        .ath-marquee__track {
           width: max-content;
-          animation: marquee 45s linear infinite;
+          will-change: transform;
+          animation: ath-marquee 45s linear infinite;
         }
-        .group:hover .marquee__track {
+        .ath-marquee:hover .ath-marquee__track {
           animation-play-state: paused;
         }
-        @keyframes marquee {
+        @media (prefers-reduced-motion: reduce) {
+          .ath-marquee__track {
+            animation: none;
+          }
+        }
+        @keyframes ath-marquee {
           from {
             transform: translateX(0);
           }

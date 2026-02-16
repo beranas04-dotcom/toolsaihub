@@ -1,16 +1,6 @@
 {
   "tools": [
     {
-      "id": "anas",
-      "name": "anas",
-      "slug": "anas",
-      "tagline": "",
-      "description": "good tool",
-      "category": "images",
-      "tags": [],
-      "pricing": ""
-    },
-    {
       "id": "canva",
       "name": "Canva",
       "slug": "canva",
@@ -23,16 +13,6 @@
         "marketing"
       ],
       "pricing": "Freemium, Pro $14.99/mo"
-    },
-    {
-      "id": "canvapro",
-      "name": "canvaPro",
-      "slug": "canvapro",
-      "tagline": "",
-      "description": "",
-      "category": "Images",
-      "tags": [],
-      "pricing": "freemium"
     },
     {
       "id": "consensus",
@@ -122,15 +102,18 @@
       "id": "imageopt",
       "name": "imageOpt AI",
       "slug": "imageopt",
-      "tagline": "Automatic image optimization and upscaling",
-      "description": "Automatic image optimization and upscaling",
+      "tagline": "AI-powered image optimization for faster websites without quality loss",
+      "description": "ImageOpt AI is an AI-powered image optimization tool that compresses and enhances images for faster loading websites without sacrificing visual quality. It automatically adjusts images for performance and efficiency, making it ideal for developers, marketers, and content creators.\n",
       "category": "images",
       "tags": [
-        "images",
-        "optimize",
-        "upscale"
+        "image optimization",
+        "compression",
+        "performance",
+        "web",
+        "ai",
+        "speed"
       ],
-      "pricing": "Credits-based"
+      "pricing": "Freemium + Subscription ($20/month) / Free plan available. Pro plan starts at $20/month per user. Team plan at $200/month with shared credits. Includes usage-based pricing and BYOK (Bring Your Own Keys)."
     },
     {
       "id": "jasper-ai",
@@ -145,18 +128,6 @@
         "enterprise"
       ],
       "pricing": "Paid, from $39/mo"
-    },
-    {
-      "id": "laosj",
-      "name": "qlaj,",
-      "slug": "laosj",
-      "tagline": "zedddss",
-      "description": "sdezd dzdd zdc",
-      "category": "audio",
-      "tags": [
-        "sdfe"
-      ],
-      "pricing": "paid"
     },
     {
       "id": "leonardo-ai",
@@ -414,15 +385,15 @@
       "id": "vidopt",
       "name": "VidOpt",
       "slug": "vidopt",
-      "tagline": "video compression & smart trimming with AI",
-      "description": "video compression & smart trimming with AI",
+      "tagline": "video, youtube seo, video optimization, ai video, content creator, marketing",
+      "description": "VidOpt is an AI-powered video optimization tool designed for content creators, YouTubers, and digital marketers looking to improve their video performance and reach.\n\nIt helps users optimize video titles, descriptions, tags, and overall SEO to increase visibility on platforms like YouTube. By analyzing trends and audience behavior, VidOpt provides smart recommendations that make it easier to rank videos and attract more views.\n\nThe platform includes features such as keyword optimization, performance insights, and AI-driven suggestions that simplify the process of growing a video channel. It allows creators to focus more on content creation while improving their chances of getting discovered.\n\nVidOpt is ideal for YouTubers, video marketers, and anyone serious about growing their presence through video content.\n\nOverall, VidOpt is a practical solution for creators who want to boost video performance and maximize their reach with the help of AI.\n",
       "category": "video",
       "tags": [
         "video",
         "compression",
         "social"
       ],
-      "pricing": "Subscription"
+      "pricing": "subscription / 25% revenue share + optional $9.99/month plan"
     },
     {
       "id": "writesonic",
@@ -439,5 +410,5 @@
       "pricing": "Freemium, Paid from $12/mo"
     }
   ],
-  "generatedAt": "2026-02-13T19:29:55.305Z"
+  "generatedAt": "2026-02-16T15:53:46.876Z"
 }

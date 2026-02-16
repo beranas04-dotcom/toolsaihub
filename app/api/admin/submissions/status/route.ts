@@ -1,117 +1,79 @@
 import { NextResponse } from "next/server";
 import { getAdminDb } from "@/lib/firebaseAdmin";
-import { requireAdminUser } from "@/lib/admin-session";
-
-function slugify(input: string) {
-    return String(input || "")
-        .toLowerCase()
-        .trim()
-        .replace(/&/g, "and")
-        .replace(/[^a-z0-9]+/g, "-")
-        .replace(/(^-|-$)/g, "");
-}
 
 export const dynamic = "force-dynamic";
 
+function safeTrim(v: any) {
+    return String(v ?? "").trim();
+}
+
+function safeLower(v: any) {
+    return safeTrim(v).toLowerCase();
+}
+
+function isValidHttpUrl(u: string) {
+    try {
+        const url = new URL(u);
+        return url.protocol === "http:" || url.protocol === "https:";
+    } catch {
+        return false;
+    }
+}
+
 export async function POST(req: Request) {
     try {
-        const adminUser = await requireAdminUser();
-        const { id, action } = (await req.json()) as { id?: string; action?: "approve" | "reject" };
+        const body = await req.json().catch(() => ({}));
 
-        if (!id || !action) {
-            return NextResponse.json({ error: "Missing id/action" }, { status: 400 });
+        const name = safeTrim(body.name);
+        const websiteUrl = safeTrim(body.websiteUrl);
+        const tagline = safeTrim(body.tagline);
+        const category = safeTrim(body.category);
+        const pricing = safeTrim(body.pricing);
+        const email = safeLower(body.email);
+
+        const description = safeTrim(body.description);
+        const affiliateUrl = safeTrim(body.affiliateUrl);
+        const logo = safeTrim(body.logo);
+        const tags = Array.isArray(body.tags) ? body.tags.map(safeTrim).filter(Boolean).slice(0, 12) : [];
+
+        if (!name || !websiteUrl || !tagline || !category || !pricing || !email) {
+            return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
+        }
+        if (!isValidHttpUrl(websiteUrl)) {
+            return NextResponse.json({ error: "Invalid website URL" }, { status: 400 });
+        }
+        if (affiliateUrl && !isValidHttpUrl(affiliateUrl)) {
+            return NextResponse.json({ error: "Invalid affiliate URL" }, { status: 400 });
+        }
+        if (logo && !isValidHttpUrl(logo)) {
+            return NextResponse.json({ error: "Invalid logo URL" }, { status: 400 });
+        }
+        if (!email.includes("@")) {
+            return NextResponse.json({ error: "Invalid email" }, { status: 400 });
         }
 
         const db = getAdminDb();
-        const subRef = db.collection("submissions").doc(id);
-        const subSnap = await subRef.get();
+        const docRef = db.collection("submissions").doc();
 
-        if (!subSnap.exists) {
-            return NextResponse.json({ error: "Submission not found" }, { status: 404 });
-        }
-
-        const sub = subSnap.data() as any;
-        const now = new Date().toISOString();
-
-        if (action === "reject") {
-            await subRef.update({ status: "rejected", reviewedAt: now, reviewedBy: adminUser.email });
-
-            await db.collection("moderation_logs").add({
-                type: "submission_rejected",
-                submissionId: id,
-                adminUid: adminUser.uid,
-                adminEmail: adminUser.email,
-                at: now,
-            });
-
-            return NextResponse.json({ ok: true });
-        }
-
-        // action === "approve"
-        const toolName = sub.toolName || sub.name || "";
-        const toolId = slugify(sub.slug || toolName || id) || id;
-
-        const toolRef = db.collection("tools").doc(toolId);
-
-        // إذا كاين tool بنفس id من قبل، ما نخربوش
-        const existing = await toolRef.get();
-        if (existing.exists) {
-            // فقط log و حذف submission
-            await db.collection("moderation_logs").add({
-                type: "submission_approved_tool_exists",
-                submissionId: id,
-                toolId,
-                adminUid: adminUser.uid,
-                adminEmail: adminUser.email,
-                at: now,
-            });
-
-            await subRef.delete();
-            return NextResponse.json({ ok: true, toolId, note: "tool already existed" });
-        }
-
-        // Create tool from submission
-        await toolRef.set(
-            {
-                id: toolId,
-                name: toolName,
-                slug: toolId,
-
-                website: sub.websiteUrl || sub.website || "",
-                tagline: sub.tagline || "",
-                description: sub.description || "",
-                category: (sub.category || "").toLowerCase().trim(), // حاول تخليه نفس taxonomy ديالك
-                pricing: sub.pricing || "",
-
-                status: "published",
-                createdAt: now,
-                updatedAt: now,
-
-                // provenance
-                submittedBy: sub.submitterEmail || "",
-                source: "submission",
-            },
-            { merge: true }
-        );
-
-        // Delete submission
-        await subRef.delete();
-
-        // Moderation log
-        await db.collection("moderation_logs").add({
-            type: "submission_approved",
-            submissionId: id,
-            toolId,
-            adminUid: adminUser.uid,
-            adminEmail: adminUser.email,
-            at: now,
+        await docRef.set({
+            name,
+            websiteUrl,
+            tagline,
+            description: description || "",
+            category,
+            pricing,
+            email,
+            affiliateUrl: affiliateUrl || "",
+            logo: logo || "",
+            tags,
+            status: "pending",
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+            source: "public_submit",
         });
 
-        return NextResponse.json({ ok: true, toolId });
+        return NextResponse.json({ ok: true, id: docRef.id });
     } catch (e: any) {
-        console.error(e);
-        const msg = e?.message || "Server error";
-        const status = msg === "UNAUTHENTICATED" ? 401 : msg === "FORBIDDEN" ? 403 : 500;
-        return NextResponse.json({ error: msg }, { status });
+        return NextResponse.json({ error: e?.message || "Server error" }, { status: 500 });
     }
 }

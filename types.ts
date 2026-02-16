@@ -1,8 +1,7 @@
-export type ToolStatus = "draft" | "published";
+export type ToolStatus = "draft" | "published" | "rejected" | "pending";
 
 export interface Tool {
     id: string;
-
 
     // basics
     name: string;
@@ -23,14 +22,21 @@ export interface Tool {
     // media
     logo?: string;
 
+    // optional extra media
+    screenshots?: string[];
+
     // commercial
-    pricing?: string; // keep it string because you use values like "Paid, from $39/mo"
+    pricing?: string; // e.g. "Free", "Freemium", "Paid from $20/mo"
+    pricingDetails?: string; // long text plans
     freeTrial?: boolean;
-    pricingDetails?: string;
+
+    // affiliate meta
+    affiliateNetwork?: string;
+    affiliateNotes?: string;
 
     // ratings & reviews
-    rating?: number; // average rating (e.g., 1-5)
-    reviewCount?: number; // total number of reviews
+    rating?: number;
+    reviewCount?: number;
 
     // curation
     featured?: boolean;
@@ -41,6 +47,13 @@ export interface Tool {
     useCases?: string[];
     pros?: string[];
     cons?: string[];
+
+    // SEO fields
+    metaTitle?: string;
+    metaDescription?: string;
+
+    // admin notes
+    adminNotes?: string;
 
     // admin / firestore fields (optional)
     status?: ToolStatus;

@@ -70,3 +70,6 @@ export const initFirebaseAdmin = () => {
 export function getDb() {
     return getAdminDb();
 }
+
+
+

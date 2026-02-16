@@ -16,9 +16,15 @@ function getDomain(url?: string) {
 }
 
 export default function ToolCard({ tool }: { tool: Tool }) {
-    const hasOut = Boolean(tool.affiliateUrl || tool.website);
-    const domain = getDomain(tool.website || tool.affiliateUrl);
-    const outUrl = `/api/out?toolId=${encodeURIComponent(tool.slug || tool.id)}`;
+    // support both field names (website vs websiteUrl)
+    const website = (tool as any).websiteUrl || (tool as any).website || "";
+    const affiliateUrl = (tool as any).affiliateUrl || "";
+
+    const hasOut = Boolean(affiliateUrl || website);
+    const domain = getDomain(website || affiliateUrl);
+
+    // ✅ route.ts supports toolId OR slug
+    const outUrl = `/api/out?toolId=${encodeURIComponent((tool as any).slug || tool.id)}`;
 
     return (
         <div className="group relative bg-card border border-border rounded-2xl p-6 hover:shadow-xl hover:border-primary/40 transition-all duration-300 flex flex-col h-full">
@@ -30,34 +36,41 @@ export default function ToolCard({ tool }: { tool: Tool }) {
                     alt={tool.name}
                     className="w-12 h-12 rounded-lg object-contain bg-muted/40 p-2"
                 />
+                {tool.featured && (
+                    <span className="absolute top-3 right-3 text-[10px] px-2 py-1 rounded-full bg-yellow-500/20 text-yellow-400 border border-yellow-500/30">
+                        ⭐ Sponsored
+                    </span>
+                )}
 
                 <div className="min-w-0 flex-1">
-                    <div className="flex items-start justify-between gap-3">
-                        <Link href={`/tools/${tool.slug || tool.id}`} className="min-w-0">
-                            <h3 className="text-lg font-semibold leading-tight group-hover:text-primary transition-colors line-clamp-1">
-                                {tool.name}
-                            </h3>
-                        </Link>
+                    <Link href={`/tools/${tool.slug || tool.id}`} className="block">
+                        <h3 className="text-lg font-semibold leading-tight group-hover:text-primary transition-colors line-clamp-1">
+                            {tool.name}
+                        </h3>
+                    </Link>
 
-                        {tool.pricing ? (
-                            <span className="shrink-0 text-[11px] font-medium bg-muted px-2 py-1 rounded-full max-w-[160px] truncate whitespace-nowrap">
-                                {tool.pricing}
+                    {/* ✅ Pricing تحت العنوان */}
+                    {tool.pricing ? (
+                        <div className="mt-2">
+                            <span className="inline-flex max-w-full items-center rounded-full bg-muted px-2 py-1 text-[11px] font-medium leading-none">
+                                <span className="truncate">{tool.pricing}</span>
                             </span>
-                        ) : null}
-                    </div>
+                        </div>
+                    ) : null}
 
                     {tool.tagline ? (
-                        <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
+                        <p className="text-sm text-muted-foreground mt-2 line-clamp-2">
                             {tool.tagline}
                         </p>
                     ) : null}
                 </div>
             </div>
 
+
             {/* FEATURES */}
-            {tool.features?.length ? (
+            {(tool as any).features?.length ? (
                 <ul className="text-xs text-muted-foreground mt-4 space-y-1">
-                    {tool.features.slice(0, 3).map((f) => (
+                    {(tool as any).features.slice(0, 3).map((f: string) => (
                         <li key={f} className="line-clamp-1">
                             • {f}
                         </li>
@@ -66,9 +79,9 @@ export default function ToolCard({ tool }: { tool: Tool }) {
             ) : null}
 
             {/* TAGS */}
-            {tool.tags?.length ? (
+            {(tool as any).tags?.length ? (
                 <div className="flex flex-wrap gap-2 mt-4">
-                    {tool.tags.slice(0, 4).map((tag) => (
+                    {(tool as any).tags.slice(0, 4).map((tag: string) => (
                         <span
                             key={tag}
                             className="text-[11px] px-2 py-1 rounded-full bg-primary/10 text-primary"
@@ -81,7 +94,7 @@ export default function ToolCard({ tool }: { tool: Tool }) {
 
             {/* FOOTER */}
             <div className="mt-auto pt-6 flex flex-col gap-3">
-                <div className="flex items-center justify-between text-xs text-muted-foreground">
+                <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
                     {domain ? (
                         <span className="truncate max-w-[180px]">🔗 {domain}</span>
                     ) : (
@@ -89,9 +102,10 @@ export default function ToolCard({ tool }: { tool: Tool }) {
                     )}
                 </div>
 
+                {/* ACTIONS */}
                 <div className="flex items-center gap-3">
                     <Link
-                        href={`/tools/${tool.slug || tool.id}`}
+                        href={`/tools/${(tool as any).slug || tool.id}`}
                         className="flex-1 text-center text-sm font-medium border border-border rounded-lg py-2 hover:bg-muted transition"
                     >
                         View Details
@@ -105,8 +119,8 @@ export default function ToolCard({ tool }: { tool: Tool }) {
                             onClick={() =>
                                 trackEvent("outbound_click", {
                                     tool_id: tool.id,
-                                    tool_name: tool.name,
-                                    category: tool.category || "",
+                                    tool_name: (tool as any).name,
+                                    category: (tool as any).category || "",
                                     destination: "out",
                                 })
                             }

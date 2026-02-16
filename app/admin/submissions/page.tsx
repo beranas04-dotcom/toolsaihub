@@ -11,7 +11,6 @@ export default async function AdminSubmissionsPage() {
     if (!user) redirect("/admin/login");
     if (!user.isAdmin) redirect("/");
 
-    const submissions = await listSubmissions();
-
+    const submissions = await listSubmissions("pending");
     return <SubmissionsClient initialSubmissions={submissions} />;
 }
