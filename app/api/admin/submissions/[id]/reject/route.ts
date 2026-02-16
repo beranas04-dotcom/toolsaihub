@@ -4,12 +4,10 @@ import { rejectSubmission } from "@/lib/admin-submissions";
 
 export const dynamic = "force-dynamic";
 
-export async function POST(
-    req: Request,
-    ctx: { params: { id: string } }
-) {
+export async function POST(req: Request, ctx: { params: { id: string } }) {
     try {
         await requireAdminUser();
+
         const body = (await req.json().catch(() => ({}))) as { reason?: string };
 
         await rejectSubmission(ctx.params.id, body?.reason);

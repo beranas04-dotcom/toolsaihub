@@ -221,7 +221,7 @@ export async function approveSubmission({ submissionId, adminUid, adminEmail }: 
 
 
 
-export async function rejectSubmission({ submissionId, reason, adminUid, adminEmail }: { submissionId: string; reason?: string; adminUid?: string; adminEmail?: string }) {
+export async function rejectSubmission(submissionId: string, reason?: string) {
     const db = getAdminDb();
     const ref = db.collection("tool_submissions").doc(submissionId);
     const snap = await ref.get();
@@ -233,10 +233,10 @@ export async function rejectSubmission({ submissionId, reason, adminUid, adminEm
             rejectReason: reason?.trim() ? reason.trim().slice(0, 300) : null,
             rejectedAt: new Date(),
             updatedAt: new Date(),
-            reviewedBy: adminEmail || "AIToolsHub Team",
         },
         { merge: true }
     );
 
     return { ok: true };
 }
+
