@@ -357,6 +357,11 @@ export default async function ToolDetailsPage({
                     </div>
                 </div>
             </section>
+            <div className="my-6">
+                <div className="h-[90px] bg-muted flex items-center justify-center rounded-xl">
+                    Ad space
+                </div>
+            </div>
 
             <div className="mt-10 grid gap-8 lg:grid-cols-[1fr_360px]">
                 <div className="space-y-8">
@@ -366,63 +371,75 @@ export default async function ToolDetailsPage({
                             {tool.description || "No description yet."}
                         </p>
                     </section>
+                    <div className="my-6">
+                        <div className="h-[90px] bg-muted flex items-center justify-center rounded-xl">
+                            Ad space
+                        </div>
+                    </div>
+
+                    {tool.pricingDetails ? (
+                        <div className="mt-8 rounded-2xl border border-border bg-card p-6">
+                            <h2 className="text-xl font-semibold mb-3">Pricing details</h2>
+                            <p className="text-muted-foreground whitespace-pre-line">
+                                {tool.pricingDetails}
+                            </p>
+                        </div>
+                    ) : null}
+
 
                     {tool.features?.length ? (
-                        <section className="rounded-2xl border border-border bg-card p-6 sm:p-8">
-                            <h2 className="text-xl font-bold mb-4">Key features</h2>
-                            <ul className="grid gap-2 sm:grid-cols-2">
-                                {tool.features.map((f) => (
-                                    <li
-                                        key={f}
-                                        className="rounded-xl border border-border bg-background px-4 py-3 text-sm"
-                                    >
+                        <div className="mt-8 rounded-2xl border border-border bg-card p-6">
+                            <h2 className="text-xl font-semibold mb-4">Key features</h2>
+                            <div className="grid md:grid-cols-2 gap-3">
+                                {tool.features.map((f, i) => (
+                                    <div key={i} className="px-3 py-2 rounded-lg border border-border">
                                         {f}
-                                    </li>
+                                    </div>
                                 ))}
-                            </ul>
-                        </section>
-                    ) : null}
-                    {(tool.pros?.length || tool.cons?.length) ? (
-                        <section className="rounded-2xl border border-border bg-card p-6 sm:p-8">
-                            <h2 className="text-xl font-bold mb-4">Pros & Cons</h2>
-
-                            <div className="grid gap-6 sm:grid-cols-2">
-                                {/* Pros */}
-                                <div>
-                                    <h3 className="font-semibold mb-3 text-green-600">✅ Pros</h3>
-                                    {tool.pros?.length ? (
-                                        <ul className="space-y-2">
-                                            {tool.pros.map((p) => (
-                                                <li key={p} className="flex items-start gap-2 text-sm text-muted-foreground">
-                                                    <span className="mt-0.5">•</span>
-                                                    <span className="break-words">{p}</span>
-                                                </li>
-                                            ))}
-                                        </ul>
-                                    ) : (
-                                        <p className="text-sm text-muted-foreground">No pros listed.</p>
-                                    )}
-                                </div>
-
-                                {/* Cons */}
-                                <div>
-                                    <h3 className="font-semibold mb-3 text-red-500">⚠️ Cons</h3>
-                                    {tool.cons?.length ? (
-                                        <ul className="space-y-2">
-                                            {tool.cons.map((c) => (
-                                                <li key={c} className="flex items-start gap-2 text-sm text-muted-foreground">
-                                                    <span className="mt-0.5">•</span>
-                                                    <span className="break-words">{c}</span>
-                                                </li>
-                                            ))}
-                                        </ul>
-                                    ) : (
-                                        <p className="text-sm text-muted-foreground">No cons listed.</p>
-                                    )}
-                                </div>
                             </div>
-                        </section>
+                        </div>
                     ) : null}
+
+                    {(tool.pros?.length || tool.cons?.length) ? (
+                        <div className="mt-8 grid md:grid-cols-2 gap-6">
+
+                            {tool.pros?.length ? (
+                                <div className="rounded-2xl border border-green-500/30 p-6">
+                                    <h3 className="font-semibold mb-3 text-green-400">Pros</h3>
+                                    <ul className="space-y-2 text-sm">
+                                        {tool.pros.map((p, i) => (
+                                            <li key={i}>✔ {p}</li>
+                                        ))}
+                                    </ul>
+                                </div>
+                            ) : null}
+
+                            {tool.cons?.length ? (
+                                <div className="rounded-2xl border border-red-500/30 p-6">
+                                    <h3 className="font-semibold mb-3 text-red-400">Cons</h3>
+                                    <ul className="space-y-2 text-sm">
+                                        {tool.cons.map((c, i) => (
+                                            <li key={i}>⚠ {c}</li>
+                                        ))}
+                                    </ul>
+                                </div>
+                            ) : null}
+
+                        </div>
+                    ) : null}
+                    {tool.useCases?.length ? (
+                        <div className="mt-8 rounded-2xl border border-border bg-card p-6">
+                            <h2 className="text-xl font-semibold mb-4">Use cases</h2>
+                            <div className="grid md:grid-cols-2 gap-3">
+                                {tool.useCases.map((u, i) => (
+                                    <div key={i} className="px-3 py-2 rounded-lg border border-border">
+                                        {u}
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    ) : null}
+
 
                     {/* ===== FAQ (outside Pros&Cons) ===== */}
                     <section className="rounded-2xl border border-border bg-card p-6 sm:p-8">
@@ -482,6 +499,12 @@ export default async function ToolDetailsPage({
                             </div>
                         </section>
                     ) : null}
+                    <div className="my-6">
+                        <div className="h-[90px] bg-muted flex items-center justify-center rounded-xl">
+                            Ad space
+                        </div>
+                    </div>
+
                     {/* Reviews section */}
                     <section id="reviews" className="rounded-2xl border border-border bg-card p-6 sm:p-8">
                         <div className="flex items-center justify-between gap-4 mb-4">
