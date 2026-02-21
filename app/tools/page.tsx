@@ -3,7 +3,7 @@ import Link from "next/link";
 import ToolsFilters from "@/components/tools/ToolsFilters";
 import { getAllTools } from "@/lib/toolsRepo";
 import ToolCardPro from "@/components/tools/ToolCardPro";
-
+import { siteMetadata } from "@/lib/siteMetadata";
 export const dynamic = "force-dynamic";
 
 const PER_PAGE = 12;
@@ -13,7 +13,16 @@ function parsePage(v?: string) {
     if (!Number.isFinite(n) || n < 1) return 1;
     return Math.floor(n);
 }
+const base = siteUrl();
 
+const collectionJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "CollectionPage",
+    name: "AI Tools Directory",
+    url: `${base}/tools`,
+    description:
+        "Browse curated AI tools across categories. Compare features, pricing, and discover the best tools for your workflow.",
+};
 function siteUrl() {
     return (process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000").replace(/\/$/, "");
 }
@@ -67,14 +76,61 @@ export async function generateMetadata({
     const pricing = (searchParams?.pricing || "").trim();
     const sort = (searchParams?.sort || "featured").trim() || "featured";
 
+    const base = siteMetadata.siteUrl.replace(/\/$/, "");
+    const canonical = buildCanonical({
+        page,
+        category: category || undefined,
+        pricing: pricing || undefined,
+        sort: sort || undefined,
+    });
+
+    const parts: string[] = ["AI Tools"];
+    if (category) parts.push(category);
+    if (pricing) parts.push(`${pricing} pricing`);
+    const mainTitle = parts.join(" · ");
+
+    const pageSuffix = page > 1 ? ` (Page ${page})` : "";
+    const title = `${mainTitle}${pageSuffix} | ${siteMetadata.siteName}`;
+
+    const description =
+        category || pricing
+            ? `Browse curated ${category ? `${category} ` : ""}AI tools${pricing ? ` with ${pricing} pricing` : ""}. Compare features, pricing, and discover the best tools for your workflow.`
+            : "Browse curated AI tools across categories. Compare features, pricing, and discover the best tools for your workflow.";
+
+    const ogImage = `${base}/api/og?title=${encodeURIComponent(mainTitle)}`;
+
     return {
-        alternates: {
-            canonical: buildCanonical({
-                page,
-                category: category || undefined,
-                pricing: pricing || undefined,
-                sort: sort || undefined,
-            }),
+        title,
+        description,
+        alternates: { canonical },
+
+        // ✅ Pagination SEO: خلي page>1 noindex باش ما تكدّرش مع duplicates
+        robots:
+            page > 1
+                ? { index: false, follow: true }
+                : { index: true, follow: true },
+
+        openGraph: {
+            type: "website",
+            url: canonical,
+            title,
+            description,
+            siteName: siteMetadata.siteName,
+            images: [
+                {
+                    url: ogImage,
+                    width: 1200,
+                    height: 630,
+                    alt: mainTitle,
+                },
+            ],
+        },
+        twitter: {
+            card: "summary_large_image",
+            title,
+            description,
+            images: [ogImage],
+            creator: siteMetadata.social.twitter,
         },
     };
 }
@@ -103,7 +159,16 @@ export default async function ToolsPage({
 
         const pricingKey = normalizePricing((t as any).pricing);
         const pricingOk = pricingFilter ? pricingKey === pricingFilter : true;
+        const base = siteUrl();
 
+        const collectionJsonLd = {
+            "@context": "https://schema.org",
+            "@type": "CollectionPage",
+            name: "AI Tools Directory",
+            url: `${base}/tools`,
+            description:
+                "Browse curated AI tools across categories. Compare features, pricing, and discover the best tools for your workflow.",
+        };
         return catOk && pricingOk;
     });
     // sort (Sponsored ALWAYS first, then chosen sort inside groups)
@@ -175,6 +240,10 @@ export default async function ToolsPage({
 
     return (
         <main className="container mx-auto px-6 py-10">
+            <script
+                type="application/ld+json"
+                dangerouslySetInnerHTML={{ __html: JSON.stringify(collectionJsonLd) }}
+            />
             <div className="flex items-end justify-between gap-4 mb-6">
                 <div>
                     <h1 className="text-3xl font-bold mb-2">Tools</h1>

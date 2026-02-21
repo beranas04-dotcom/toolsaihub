@@ -13,6 +13,10 @@ export interface BlogPost {
     tags: string[];
     readingMinutes: number;
     content: string;
+
+    // ✅ NEW
+    image?: string;      // e.g. /blog/covers/dalle.jpg
+    featured?: boolean;  // true/false
 }
 
 function toDateString(d: any): string {
@@ -49,12 +53,15 @@ export function getAllPosts(): BlogPost[] {
                 tags: safeTags(data.tags),
                 readingMinutes: Math.max(1, Math.round(stats.minutes)),
                 content,
+
+                // ✅ NEW
+                image: data.image ? String(data.image) : undefined,
+                featured: Boolean(data.featured),
             } as BlogPost;
         })
         .sort(
             (a, b) =>
-                Date.parse(b.date || "1970-01-01") -
-                Date.parse(a.date || "1970-01-01")
+                Date.parse(b.date || "1970-01-01") - Date.parse(a.date || "1970-01-01")
         );
 
     return posts;
@@ -84,5 +91,9 @@ export function getPostBySlug(slug: string): BlogPost | null {
         tags: safeTags(data.tags),
         readingMinutes: Math.max(1, Math.round(stats.minutes)),
         content,
+
+        // ✅ NEW
+        image: data.image ? String(data.image) : undefined,
+        featured: Boolean(data.featured),
     } as BlogPost;
 }

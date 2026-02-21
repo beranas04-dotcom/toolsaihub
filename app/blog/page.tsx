@@ -1,56 +1,45 @@
-import Link from "next/link";
+import type { Metadata } from "next";
 import { getAllPosts } from "@/lib/blog";
+import BlogIndexClient from "@/components/blog/BlogIndexClient";
+import { siteMetadata } from "@/lib/siteMetadata";
 
-export const revalidate = 3600;
+export const dynamic = "force-dynamic";
 
-export default function BlogIndexPage() {
+export const metadata: Metadata = {
+    title: `Blog | ${siteMetadata.siteName}`,
+    description:
+        "Guides, comparisons, and practical workflows to pick the right AI tools and get results faster.",
+    alternates: { canonical: `${siteMetadata.siteUrl.replace(/\/$/, "")}/blog` },
+};
+
+export default function BlogPage() {
     const posts = getAllPosts();
 
     return (
-        <main className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-12">
-            <div className="mb-10">
-                <h1 className="text-4xl font-bold font-display">Blog</h1>
-                <p className="text-muted-foreground mt-2 max-w-2xl">
-                    Guides, comparisons, and practical workflows to pick the right AI tools.
-                </p>
-            </div>
+        <main className="container mx-auto px-6 py-10">
+            <div className="mb-10 rounded-3xl border border-border bg-card p-8 overflow-hidden relative">
+                <div className="absolute inset-0 bg-gradient-to-br from-primary/12 via-transparent to-transparent" />
+                <div className="relative">
+                    <h1 className="text-3xl font-bold">Blog</h1>
+                    <p className="text-muted-foreground mt-2 max-w-2xl">
+                        Guides, comparisons, and practical workflows to pick the right AI tools and get results faster.
+                    </p>
 
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                {posts.map((p) => (
-                    <Link
-                        key={p.slug}
-                        href={`/blog/${p.slug}`}
-                        className="rounded-2xl border border-border bg-card p-6 hover:shadow-md hover:border-primary/50 transition"
-                    >
-                        <div className="text-sm text-muted-foreground">
-                            {p.date ? p.date.slice(0, 10) : "—"} • {p.readingMinutes} min read
+                    <div className="mt-6 flex flex-wrap gap-3 text-sm">
+                        <div className="rounded-full border border-border bg-background px-4 py-2">
+                            ✍️ <span className="font-semibold">{posts.length}</span> posts
                         </div>
-                        <div className="mt-2 text-lg font-semibold">{p.title}</div>
-                        <div className="mt-2 text-sm text-muted-foreground line-clamp-3">
-                            {p.description}
+                        <div className="rounded-full border border-border bg-background px-4 py-2">
+                            ⚡ Updated regularly
                         </div>
-
-                        {p.tags.length > 0 && (
-                            <div className="mt-4 flex flex-wrap gap-2">
-                                {p.tags.slice(0, 6).map((t) => (
-                                    <span
-                                        key={t}
-                                        className="text-xs rounded-full bg-muted px-2 py-1 text-muted-foreground"
-                                    >
-                                        {t}
-                                    </span>
-                                ))}
-                            </div>
-                        )}
-                    </Link>
-                ))}
-            </div>
-
-            {posts.length === 0 && (
-                <div className="py-12 text-center text-muted-foreground">
-                    No posts yet. Add your first file in <code>content/blog</code>.
+                        <div className="rounded-full border border-border bg-background px-4 py-2">
+                            🎯 Built for SEO + conversion
+                        </div>
+                    </div>
                 </div>
-            )}
+            </div>
+
+            <BlogIndexClient posts={posts} />
         </main>
     );
 }
