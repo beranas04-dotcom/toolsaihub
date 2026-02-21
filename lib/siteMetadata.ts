@@ -2,7 +2,7 @@ export const siteMetadata = {
     title: "AIToolsHub — Find, compare, and review the best AI tools for creators and teams",
     description: "Find, compare, and review the best AI tools for creators and teams.",
     tagline: "Find, compare, and review the best AI tools for creators, teams, and students — updated weekly.",
-    siteUrl: process.env.NEXT_PUBLIC_SITE_URL || "https://aitoolshub.com",
+    siteUrl: process.env.NEXT_PUBLIC_SITE_URL || "https://toolsaihub.vercel.app",
     siteName: "AIToolsHub",
     logo: "/logo.svg",
     favicon: "/favicon.ico",

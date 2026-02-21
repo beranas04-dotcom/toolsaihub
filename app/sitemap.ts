@@ -13,17 +13,26 @@ function slugifyCategory(input: string) {
         .replace(/(^-|-$)/g, "");
 }
 
+function toValidDate(v: any) {
+    const d =
+        v?.toDate?.() instanceof Date
+            ? v.toDate()
+            : typeof v === "string"
+                ? new Date(v)
+                : v instanceof Date
+                    ? v
+                    : new Date();
+
+    return isNaN(d.getTime()) ? new Date() : d;
+}
+
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     const siteUrl = siteMetadata.siteUrl.replace(/\/$/, "");
 
-    // ✅ GET REAL DATA (Firebase)
     const tools = await getAllTools();
     const posts = getAllPosts();
     const allTopics = getAllTopics();
 
-    // =====================
-    // Static Routes
-    // =====================
     const staticRoutes = [
         "",
         "/tools",
@@ -41,21 +50,16 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         priority: route === "" ? 1.0 : 0.8,
     }));
 
-    // =====================
-    // Tools Routes (🔥 FIXED)
-    // =====================
-    const toolRoutes = tools.map((tool: any) => ({
-        url: `${siteUrl}/tools/${tool.slug}`, // ⚠️ مهم: slug ماشي id
-        lastModified: new Date(
-            tool.updatedAt || tool.createdAt || Date.now()
-        ),
-        changeFrequency: "weekly" as const,
-        priority: 0.9, // 🔥 مهم بزاف حيت هادو pages ديال money
-    }));
+    // ✅ Tools routes (use id by default)
+    const toolRoutes = tools
+        .filter((t: any) => t?.slug) // safety
+        .map((tool: any) => ({
+            url: `${siteUrl}/tools/${tool.slug}`, // ✅ slug
+            lastModified: toValidDate(tool.updatedAt || tool.createdAt),
+            changeFrequency: "weekly" as const,
+            priority: 0.9,
+        }));
 
-    // =====================
-    // Categories
-    // =====================
     const categories = Array.from(
         new Set(tools.map((t: any) => t.category).filter(Boolean))
     ) as string[];
@@ -67,19 +71,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         priority: 0.7,
     }));
 
-    // =====================
-    // Blog
-    // =====================
     const blogRoutes = posts.map((post) => ({
         url: `${siteUrl}/blog/${post.slug}`,
-        lastModified: new Date(post.date || Date.now()),
+        lastModified: toValidDate(post.date),
         changeFrequency: "weekly" as const,
         priority: 0.8,
     }));
 
-    // =====================
-    // Best Topics
-    // =====================
     const bestRoutes = allTopics.map((topic) => ({
         url: `${siteUrl}/best/${topic.slug}`,
         lastModified: new Date(),
@@ -87,9 +85,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         priority: 0.85,
     }));
 
-    // =====================
-    // Pagination
-    // =====================
     const totalTopics = allTopics.length;
     const limit = 20;
     const totalPages = Math.ceil(totalTopics / limit);
@@ -104,9 +99,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         });
     }
 
-    // =====================
-    // FINAL
-    // =====================
     return [
         ...staticRoutes,
         ...toolRoutes,
