@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 type Status = "idle" | "loading" | "success" | "error";
 
@@ -12,10 +12,22 @@ export function ContactForm() {
     const cooldownMs = 10_000;
     const lastSentKey = "contact_last_sent_at";
 
+    // ✅ keep lastSentAt in state (safe for SSR)
+    const [lastSentAt, setLastSentAt] = useState<number>(0);
+
+    // ✅ read localStorage only on client after mount
+    useEffect(() => {
+        try {
+            const last = Number(window.localStorage.getItem(lastSentKey) || "0");
+            setLastSentAt(Number.isFinite(last) ? last : 0);
+        } catch {
+            setLastSentAt(0);
+        }
+    }, []);
+
     const canSend = useMemo(() => {
-        const last = Number(localStorage.getItem(lastSentKey) || "0");
-        return Date.now() - last > cooldownMs;
-    }, [status]);
+        return Date.now() - lastSentAt > cooldownMs;
+    }, [lastSentAt, cooldownMs]);
 
     async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
         e.preventDefault();
@@ -61,7 +73,13 @@ export function ContactForm() {
                 throw new Error(data?.error || "Failed to send message. Please try again.");
             }
 
-            localStorage.setItem(lastSentKey, String(Date.now()));
+            // ✅ write localStorage only on client, and update state
+            const now = Date.now();
+            try {
+                window.localStorage.setItem(lastSentKey, String(now));
+            } catch { }
+            setLastSentAt(now);
+
             setStatus("success");
             setMessage("Thanks! Your message has been sent.");
             form.reset();
@@ -138,7 +156,11 @@ export function ContactForm() {
 
                 {message && (
                     <p
-                        className={`text-sm ${status === "success" ? "text-green-600" : status === "error" ? "text-red-600" : "text-muted-foreground"
+                        className={`text-sm ${status === "success"
+                                ? "text-green-600"
+                                : status === "error"
+                                    ? "text-red-600"
+                                    : "text-muted-foreground"
                             }`}
                     >
                         {message}

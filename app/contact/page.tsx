@@ -5,6 +5,8 @@ export const metadata: Metadata = {
     title: 'Contact Us - AIToolsHub',
     description: 'Get in touch with the AIToolsHub team for inquiries, feedback, or partnerships.',
 };
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 export default function ContactPage() {
     return (
