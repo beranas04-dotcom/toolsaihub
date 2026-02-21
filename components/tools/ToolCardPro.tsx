@@ -1,3 +1,5 @@
+"use client";
+
 import Link from "next/link";
 import type { Tool } from "@/types";
 import { resolveLogo } from "@/lib/toolMedia";
@@ -51,12 +53,31 @@ export default function ToolCardPro({ tool }: { tool: Tool }) {
                     <div className="flex items-start gap-3 min-w-0">
 
                         {/* ✅ Logo */}
-                        <img
-                            src={resolveLogo(tool)}
-                            alt={tool.name}
-                            className="w-10 h-10 rounded-lg object-contain bg-muted/40 p-1.5"
-                            loading="lazy"
-                        />
+                        {(() => {
+                            const logoSrc = resolveLogo(tool);
+                            const fallback = (tool.name || "?").charAt(0).toUpperCase();
+
+                            return logoSrc ? (
+                                <img
+                                    src={logoSrc}
+                                    alt={tool.name}
+                                    className="w-10 h-10 rounded-lg object-contain bg-muted/40 p-1.5"
+                                    loading="lazy"
+                                    referrerPolicy="no-referrer"
+                                    onError={(e) => {
+                                        // fallback safe (no DOM append)
+                                        e.currentTarget.onerror = null;
+                                        e.currentTarget.src = "/logo.svg";
+                                    }}
+                                />
+                            ) : (
+                                <div className="w-10 h-10 rounded-lg flex items-center justify-center bg-muted text-sm font-bold">
+                                    {fallback}
+                                </div>
+                            );
+                        })()}
+
+
 
                         <div className="min-w-0">
                             <div className="font-semibold text-lg leading-tight group-hover:text-primary transition line-clamp-1">
