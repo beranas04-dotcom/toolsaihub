@@ -3,9 +3,6 @@
 import Link from "next/link";
 import Image from "next/image";
 import { useEffect, useMemo, useRef, useState } from "react";
-import toolsData from "@/data/tools.json";
-import type { Tool } from "@/types";
-import { slugifyCategory } from "@/lib/utils";
 
 type CategoryCard = {
     key: string;
@@ -14,114 +11,10 @@ type CategoryCard = {
     count: number;
     slug: string;
     icon: string;
-    image: string; // /public/categories/*.jpg
+    image: string;
 };
 
-const categoryMetadata: Record<
-    string,
-    { icon: string; title: string; description: string; image: string }
-> = {
-    writing: {
-        icon: "✍️",
-        title: "Writing",
-        description: "Copywriting, blogs, and content workflows",
-        image: "/categories/writing.jpg",
-    },
-    images: {
-        icon: "🎨",
-        title: "Images",
-        description: "Generate, edit, and enhance visuals",
-        image: "/categories/images.jpg",
-    },
-    video: {
-        icon: "🎬",
-        title: "Video",
-        description: "Create, edit, and repurpose videos",
-        image: "/categories/video.jpg",
-    },
-    audio: {
-        icon: "🎵",
-        title: "Audio",
-        description: "Text-to-speech, voice, and sound tools",
-        image: "/categories/audio.jpg",
-    },
-    productivity: {
-        icon: "⚡",
-        title: "Productivity",
-        description: "Notes, meetings, automation, and workflows",
-        image: "/categories/productivity.jpg",
-    },
-    code: {
-        icon: "💻",
-        title: "Code",
-        description: "Coding assistants, IDEs, and dev copilots",
-        image: "/categories/code.jpg",
-    },
-    research: {
-        icon: "🔬",
-        title: "Research",
-        description: "Answer engines and research assistants",
-        image: "/categories/research.jpg",
-    },
-    marketing: {
-        icon: "📈",
-        title: "Marketing",
-        description: "SEO, email, ads, and growth tools",
-        image: "/categories/marketing.jpg",
-    },
-    utilities: {
-        icon: "🔧",
-        title: "Utilities",
-        description: "Prompts, templates, and helpers",
-        image: "/categories/utilities.jpg",
-    },
-    "developer-tools": {
-        icon: "🛠️",
-        title: "Developer Tools",
-        description: "Docs, APIs, testing, and dev utilities",
-        image: "/categories/developer-tools.jpg",
-    },
-};
-
-function prettifyCategory(raw: string) {
-    return raw.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
-}
-
-export default function CategoryCarousel() {
-    const tools = toolsData as Tool[];
-
-    // count tools per category
-    const counts = useMemo(() => {
-        return tools.reduce<Record<string, number>>((acc, t) => {
-            if (!t.category) return acc;
-            acc[t.category] = (acc[t.category] || 0) + 1;
-            return acc;
-        }, {});
-    }, [tools]);
-
-    const categories = useMemo<CategoryCard[]>(() => {
-        const unique = Array.from(
-            new Set(tools.map((t) => t.category).filter((c): c is string => Boolean(c)))
-        );
-
-        return unique
-            .map((key) => {
-                const meta = categoryMetadata[key];
-                const title = meta?.title ?? prettifyCategory(key);
-
-                return {
-                    key,
-                    title,
-                    icon: meta?.icon ?? "🔹",
-                    description: meta?.description ?? "Explore tools in this category",
-                    image: meta?.image ?? "/categories/default.jpg", // optional fallback
-                    count: counts[key] ?? 0,
-                    slug: slugifyCategory(key),
-                };
-            })
-            .filter((c) => c.count > 0)
-            .sort((a, b) => a.title.localeCompare(b.title));
-    }, [tools, counts]);
+export default function CategoryCarousel({ categories }: { categories: CategoryCard[] }) {
 
     // Infinite illusion: duplicate list 3 times and keep scroll in the middle
     const triple = useMemo(() => [...categories, ...categories, ...categories], [categories]);

@@ -3,10 +3,14 @@ import Link from 'next/link';
 
 export const metadata: Metadata = {
     title: 'Affiliate Disclosure — AIToolsHub',
-    description: 'Learn about our affiliate partnerships and how we maintain editorial independence while recommending AI tools.',
+    description: 'Learn about our affiliate partnerships, sponsored listings, and how we maintain editorial independence while recommending AI tools.',
+    keywords: ['affiliate disclosure', 'AI tools', 'sponsored listings', 'AIToolsHub transparency'],
     openGraph: {
         title: 'Affiliate Disclosure — AIToolsHub',
         description: 'Learn about our affiliate partnerships and how we maintain editorial independence while recommending AI tools.',
+        url: 'https://aitoolshub.co/disclosure',
+        siteName: 'AIToolsHub',
+        type: 'website',
     },
 };
 
@@ -20,14 +24,16 @@ export default function DisclosurePage() {
                     Last updated: January 28, 2026
                 </p>
 
+                {/* Transparency */}
                 <section className="mb-8">
                     <h2 className="text-2xl font-semibold mb-4">Our Commitment to Transparency</h2>
                     <p className="text-foreground/90 leading-relaxed mb-4">
                         AIToolsHub is committed to providing honest, unbiased reviews and recommendations of AI tools.
-                        This page explains our affiliate relationships and how we maintain editorial independence.
+                        This page explains our affiliate relationships, sponsored listings, and how we maintain editorial independence.
                     </p>
                 </section>
 
+                {/* Affiliate Links */}
                 <section className="mb-8">
                     <h2 className="text-2xl font-semibold mb-4">Affiliate Links</h2>
                     <p className="text-foreground/90 leading-relaxed mb-4">
@@ -41,20 +47,33 @@ export default function DisclosurePage() {
                     </p>
                 </section>
 
+                {/* Sponsored Listings */}
                 <section className="mb-8">
-                    <h2 className="text-2xl font-semibold mb-4">Editorial Independence</h2>
+                    <h2 className="text-2xl font-semibold mb-4">Sponsored Listings</h2>
                     <p className="text-foreground/90 leading-relaxed mb-4">
-                        <strong>Affiliate commissions do not influence our rankings, reviews, or recommendations.</strong>
-                        Our editorial team evaluates and ranks AI tools based solely on their features, performance,
-                        user experience, value, and overall quality.
+                        Some tools may appear as <strong>featured or sponsored listings</strong>. These placements are clearly
+                        identified and may be promoted for a limited time.
                     </p>
                     <p className="text-foreground/90 leading-relaxed mb-4">
-                        We feature tools that we believe provide genuine value to our users, regardless of whether
-                        they offer affiliate programs. Many tools listed on AIToolsHub do not have affiliate partnerships
-                        with us, yet we recommend them because they are excellent products.
+                        While sponsorship may influence visibility (such as position or highlighting),
+                        it does not affect our evaluation criteria or editorial integrity.
                     </p>
                 </section>
 
+                {/* Editorial Independence */}
+                <section className="mb-8">
+                    <h2 className="text-2xl font-semibold mb-4">Editorial Independence</h2>
+                    <p className="text-foreground/90 leading-relaxed mb-4">
+                        <strong>Affiliate commissions and sponsorships do not influence our rankings, reviews, or recommendations.</strong>
+                        Our editorial approach prioritizes real value to users.
+                    </p>
+                    <p className="text-foreground/90 leading-relaxed mb-4">
+                        We feature tools based on their quality, usefulness, and user experience — regardless of whether
+                        they offer affiliate programs.
+                    </p>
+                </section>
+
+                {/* Evaluation */}
                 <section className="mb-8">
                     <h2 className="text-2xl font-semibold mb-4">How We Evaluate Tools</h2>
                     <p className="text-foreground/90 leading-relaxed mb-4">
@@ -68,28 +87,32 @@ export default function DisclosurePage() {
                         <li>Customer support and documentation</li>
                         <li>User reviews and community feedback</li>
                     </ul>
+                </section>
+
+                {/* How we make money */}
+                <section className="mb-8">
+                    <h2 className="text-2xl font-semibold mb-4">How AIToolsHub Makes Money</h2>
                     <p className="text-foreground/90 leading-relaxed mb-4">
-                        The presence or absence of an affiliate relationship has no bearing on these evaluations.
+                        AIToolsHub generates revenue through affiliate partnerships, sponsored placements,
+                        and advertising. This allows us to keep the platform free for users while continuing
+                        to improve our content and features.
                     </p>
                 </section>
 
+                {/* Trust */}
                 <section className="mb-8">
                     <h2 className="text-2xl font-semibold mb-4">Your Trust Matters</h2>
                     <p className="text-foreground/90 leading-relaxed mb-4">
-                        We understand that trust is earned, not given. That's why we're transparent about our affiliate
-                        relationships and committed to providing honest recommendations that serve your best interests.
-                    </p>
-                    <p className="text-foreground/90 leading-relaxed mb-4">
-                        If you ever feel that a recommendation is biased or inaccurate, we want to hear from you.
-                        Your feedback helps us improve and maintain the highest standards of integrity.
+                        We understand that trust is earned, not given. That's why we are transparent about how we operate
+                        and how we generate revenue.
                     </p>
                 </section>
 
+                {/* Contact */}
                 <section className="mb-8">
                     <h2 className="text-2xl font-semibold mb-4">Questions or Concerns?</h2>
                     <p className="text-foreground/90 leading-relaxed mb-4">
-                        If you have any questions about our affiliate relationships, editorial policies, or specific
-                        tool recommendations, please don't hesitate to contact us.
+                        If you have any questions about our policies or recommendations, feel free to reach out.
                     </p>
                     <p className="text-foreground/90 leading-relaxed mb-4">
                         <strong>Contact us:</strong>{' '}
@@ -102,25 +125,27 @@ export default function DisclosurePage() {
                     </p>
                 </section>
 
+                {/* FTC */}
                 <section className="mb-8">
                     <h2 className="text-2xl font-semibold mb-4">FTC Compliance</h2>
                     <p className="text-foreground/90 leading-relaxed mb-4">
-                        In accordance with the Federal Trade Commission (FTC) guidelines, we disclose that some of
-                        the links on this website are affiliate links. We are in compliance with the FTC's requirements
-                        concerning the use of endorsements and testimonials in advertising.
+                        In accordance with the Federal Trade Commission (FTC) guidelines, we disclose that some links
+                        on this website are affiliate links. We comply with all applicable regulations regarding endorsements.
                     </p>
                 </section>
 
+                {/* Footer */}
                 <div className="mt-12 pt-8 border-t border-border">
                     <p className="text-sm text-muted-foreground text-center">
-                        Thank you for supporting AIToolsHub. Your trust and engagement make our work possible.
+                        Thank you for supporting AIToolsHub. Your trust makes our work possible.
                     </p>
-                    <div className="text-center mt-6">
-                        <Link
-                            href="/"
-                            className="text-primary hover:underline font-medium"
-                        >
+
+                    <div className="text-center mt-6 space-x-4">
+                        <Link href="/" className="text-primary hover:underline font-medium">
                             ← Back to Home
+                        </Link>
+                        <Link href="/contact" className="text-primary hover:underline font-medium">
+                            Contact Us →
                         </Link>
                     </div>
                 </div>

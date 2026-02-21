@@ -106,28 +106,51 @@ export default async function ToolsPage({
 
         return catOk && pricingOk;
     });
+    // sort (Sponsored ALWAYS first, then chosen sort inside groups)
+    function sponsorActive(t: any) {
+        if (String(t?.status || "").toLowerCase() !== "published") return false;
+        if (t?.sponsored !== true) return false;
 
-    // sort
+        const until = t?.sponsorUntil;
+        if (!until) return true;
+
+        const ms = Date.parse(String(until));
+        if (!Number.isFinite(ms)) return false;
+
+        return ms > Date.now();
+    }
+
+    function sponsorPriority(t: any) {
+        const n = Number(t?.sponsorPriority || 0);
+        return Number.isFinite(n) ? n : 0;
+    }
+
     filtered = filtered.slice().sort((a: any, b: any) => {
-        if (sort === "az") {
-            return (a.name || "").localeCompare(b.name || "");
-        }
+        // 1) Sponsored active first
+        const as = sponsorActive(a) ? 1 : 0;
+        const bs = sponsorActive(b) ? 1 : 0;
+        if (bs !== as) return bs - as;
 
-        if (sort === "newest") {
-            return pickDate(b) - pickDate(a);
-        }
+        // 2) Higher sponsorPriority first (only matters if both sponsored)
+        const ap = sponsorPriority(a);
+        const bp = sponsorPriority(b);
+        if (bp !== ap) return bp - ap;
 
-        // featured (default): featured first, verified second, then name
+        // 3) Featured
         const af = a.featured ? 1 : 0;
         const bf = b.featured ? 1 : 0;
         if (bf !== af) return bf - af;
 
+        // 4) Verified
         const av = a.verified ? 1 : 0;
         const bv = b.verified ? 1 : 0;
         if (bv !== av) return bv - av;
 
-        return (a.name || "").localeCompare(b.name || "");
+        // 5) Name
+        return String(a?.name || "").localeCompare(String(b?.name || ""));
     });
+
+
 
     const total = filtered.length;
     const totalPages = Math.max(1, Math.ceil(total / PER_PAGE));
@@ -207,6 +230,9 @@ export default async function ToolsPage({
                 }))}
             />
 
+            <div className="mb-4 rounded-xl border border-border bg-muted/30 p-3 text-xs text-muted-foreground">
+                Sponsored listings may appear first. We may earn affiliate commissions at no extra cost to you.
+            </div>
 
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
                 {tools.map((t) => (

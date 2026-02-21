@@ -4,6 +4,7 @@ import Link from "next/link";
 import type { Tool } from "@/types";
 import { trackEvent } from "@/lib/analytics";
 import ToolLogo from "@/components/tools/ToolLogo";
+import { resolveLogo } from "@/lib/toolMedia";
 
 function getDomain(url?: string) {
     if (!url) return "";
@@ -23,24 +24,43 @@ export default function ToolCard({ tool }: { tool: Tool }) {
     const hasOut = Boolean(affiliateUrl || website);
     const domain = getDomain(website || affiliateUrl);
 
+    // ✅ Sponsored logic (pro)
+    const sponsorUntil = (tool as any).sponsorUntil;
+    const sponsorActive =
+        (tool as any).sponsored === true &&
+        (!sponsorUntil || (Number.isFinite(Date.parse(String(sponsorUntil))) && Date.parse(String(sponsorUntil)) > Date.now()));
+
+    const isSponsored = sponsorActive;
+    const showFeatured = Boolean((tool as any).featured && !isSponsored);
+
+
     // ✅ route.ts supports toolId OR slug
-    const outUrl = `/api/out?toolId=${encodeURIComponent((tool as any).slug || tool.id)}`;
+    // ✅ add ref=card for analytics
+    const outUrl = `/api/out?toolId=${encodeURIComponent((tool as any).slug || tool.id)}&ref=card`;
+
 
     return (
+
         <div className="group relative bg-card border border-border rounded-2xl p-6 hover:shadow-xl hover:border-primary/40 transition-all duration-300 flex flex-col h-full">
             {/* HEADER */}
             <div className="flex items-start gap-4">
                 <ToolLogo
-                    src={tool.logo}
-                    website={tool.website || tool.affiliateUrl}
+                    src={resolveLogo(tool)}
+                    website={(tool as any).websiteUrl || tool.website || tool.affiliateUrl}
                     alt={tool.name}
                     className="w-12 h-12 rounded-lg object-contain bg-muted/40 p-2"
                 />
-                {tool.featured && (
+
+
+                {isSponsored ? (
                     <span className="absolute top-3 right-3 text-[10px] px-2 py-1 rounded-full bg-yellow-500/20 text-yellow-400 border border-yellow-500/30">
-                        ⭐ Sponsored
+                        ⭐ {(tool as any).sponsorLabel || "Sponsored"}
                     </span>
-                )}
+                ) : showFeatured ? (
+                    <span className="absolute top-3 right-3 text-[10px] px-2 py-1 rounded-full bg-primary/10 text-primary border border-primary/20">
+                        Featured
+                    </span>
+                ) : null}
 
                 <div className="min-w-0 flex-1">
                     <Link href={`/tools/${tool.slug || tool.id}`} className="block">
@@ -49,7 +69,7 @@ export default function ToolCard({ tool }: { tool: Tool }) {
                         </h3>
                     </Link>
 
-                    {/* ✅ Pricing تحت العنوان */}
+                    {/* Pricing تحت العنوان */}
                     {tool.pricing ? (
                         <div className="mt-2">
                             <span className="inline-flex max-w-full items-center rounded-full bg-muted px-2 py-1 text-[11px] font-medium leading-none">
@@ -65,7 +85,6 @@ export default function ToolCard({ tool }: { tool: Tool }) {
                     ) : null}
                 </div>
             </div>
-
 
             {/* FEATURES */}
             {(tool as any).features?.length ? (
@@ -122,6 +141,7 @@ export default function ToolCard({ tool }: { tool: Tool }) {
                                     tool_name: (tool as any).name,
                                     category: (tool as any).category || "",
                                     destination: "out",
+                                    source: "card",
                                 })
                             }
                             className="text-center text-sm font-semibold bg-primary text-primary-foreground rounded-lg py-2 px-4 hover:opacity-90 transition"

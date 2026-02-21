@@ -2,7 +2,8 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import ReviewForm from "@/components/reviews/ReviewForm";
-
+import ToolHeroBackground from "@/components/tools/ToolHeroBackground";
+import { withAutoMedia } from "@/lib/toolMedia.server";
 import type { Tool, Review } from "@/types";
 import { siteMetadata } from "@/lib/siteMetadata";
 import { getToolById, getRelatedTools } from "@/lib/toolsRepo";
@@ -20,7 +21,8 @@ function getDomain(url?: string) {
 
 function toNiceDate(d?: string) {
     if (!d) return "";
-    const t = Date.parse(d);
+    const t = typeof d === "string" ? Date.parse(d) : Date.parse(String(d));
+
     if (!Number.isFinite(t)) return "";
     return new Date(t).toLocaleDateString("en-US", {
         year: "numeric",
@@ -79,8 +81,11 @@ export async function generateMetadata({
 }: {
     params: { slug: string };
 }): Promise<Metadata> {
-    const tool = await getToolById(params.slug);
-    if (!tool) return { title: "Tool Not Found" };
+    const toolRaw = (await getToolById(params.slug)) as Tool | null;
+    if (!toolRaw) return notFound();
+
+    // 🔥 هنا السحر ديال auto system
+    const tool = await withAutoMedia(toolRaw);
 
     const base = siteMetadata.siteUrl.replace(/\/$/, "");
     const url = `${base}/tools/${tool.slug || tool.id}`;
@@ -103,8 +108,15 @@ export default async function ToolDetailsPage({
 }: {
     params: { slug: string };
 }) {
-    const tool = (await getToolById(params.slug)) as Tool | null;
-    if (!tool) return notFound();
+    const toolRaw = (await getToolById(params.slug)) as Tool | null;
+    if (!toolRaw) return notFound();
+
+    // ✅ Ensure plain JSON object (prevents Next.js RSC serialization crash)
+    const tool = JSON.parse(JSON.stringify(toolRaw)) as Tool;
+
+    const toolIdStr = String((tool as any).id || "");
+    const toolNameStr = String((tool as any).name || "");
+
 
     const base = siteMetadata.siteUrl.replace(/\/$/, "");
     const canonical = `${base}/tools/${tool.slug || tool.id}`;
@@ -187,7 +199,8 @@ export default async function ToolDetailsPage({
         ],
     };
 
-    const visitHref = `/api/out?toolId=${encodeURIComponent(tool.slug || tool.id)}`;
+    const visitHref = `/api/out?toolId=${encodeURIComponent(tool.slug || tool.id)}&ref=tool_page`;
+
     const websiteDomain = getDomain(tool.website);
 
     const lastUpdated =
@@ -245,114 +258,130 @@ export default async function ToolDetailsPage({
                 ) : null}
             </div>
 
-            <section className="rounded-2xl border border-border bg-card p-6 sm:p-8">
-                <div className="flex flex-col gap-6 sm:flex-row sm:items-start sm:justify-between">
-                    <div className="flex items-start gap-4 min-w-0">
-                        <img
-                            src={logoSrc}
-                            alt={tool.name}
-                            className="w-14 h-14 rounded-xl object-contain bg-muted/30 p-2"
-                            loading="lazy"
-                        />
+            <section className="relative overflow-hidden rounded-2xl border border-border bg-card p-6 sm:p-8">
+                <ToolHeroBackground tool={tool} />
+                <div className="relative">
+                    <div className="flex flex-col gap-6 sm:flex-row sm:items-start sm:justify-between">
+                        <div className="flex items-start gap-4 min-w-0">
+                            <img
+                                src={logoSrc}
+                                alt={tool.name}
+                                className="w-14 h-14 rounded-xl object-contain bg-muted/30 p-2"
+                                loading="lazy"
+                            />
 
-                        <div className="min-w-0">
-                            <h1 className="text-3xl sm:text-4xl font-bold font-display leading-tight">
-                                {tool.name}
-                            </h1>
+                            <div className="min-w-0">
+                                <h1 className="text-3xl sm:text-4xl font-bold font-display leading-tight">
+                                    {tool.name}
+                                </h1>
 
-                            {tool.tagline ? (
-                                <p className="mt-2 text-muted-foreground text-base sm:text-lg">
-                                    {tool.tagline}
-                                </p>
-                            ) : null}
-
-                            <div className="mt-4 flex flex-wrap items-center gap-2">
-                                {tool.category ? (
-                                    <span className="text-xs rounded-full bg-primary/10 text-primary px-3 py-1">
-                                        {tool.category}
-                                    </span>
+                                {tool.tagline ? (
+                                    <p className="mt-2 text-muted-foreground text-base sm:text-lg">
+                                        {tool.tagline}
+                                    </p>
                                 ) : null}
 
-                                {tool.pricing ? (
-                                    <span className="text-xs rounded-full border border-border bg-muted px-3 py-1 text-muted-foreground">
-                                        {tool.pricing}
-                                    </span>
-                                ) : null}
-
-                                {(tool as any).freeTrial ? (
-                                    <span className="text-xs rounded-full border border-border bg-muted px-3 py-1 text-muted-foreground">
-                                        Free trial
-                                    </span>
-                                ) : null}
-
-                                {lastUpdatedNice ? (
-                                    <span className="text-xs text-muted-foreground">
-                                        Updated: <span className="text-foreground">{lastUpdatedNice}</span>
-                                    </span>
-                                ) : null}
-                            </div>
-
-                            {/* Rating summary */}
-                            <div className="mt-4 flex flex-wrap items-center gap-3">
-                                {summary.reviewCount > 0 ? (
-                                    <>
-                                        <Stars value={summary.averageRating} idPrefix={`summary-${tool.id}`} />
-
-                                        <span className="text-sm font-semibold text-foreground">
-                                            {summary.averageRating.toFixed(1)}
+                                <div className="mt-4 flex flex-wrap items-center gap-2">
+                                    {tool.category ? (
+                                        <span className="text-xs rounded-full bg-primary/10 text-primary px-3 py-1">
+                                            {tool.category}
                                         </span>
+                                    ) : null}
+
+                                    {tool.pricing ? (
+                                        <span className="text-xs rounded-full border border-border bg-muted px-3 py-1 text-muted-foreground">
+                                            {tool.pricing}
+                                        </span>
+                                    ) : null}
+
+                                    {(tool as any).freeTrial ? (
+                                        <span className="text-xs rounded-full border border-border bg-muted px-3 py-1 text-muted-foreground">
+                                            Free trial
+                                        </span>
+                                    ) : null}
+
+                                    {lastUpdatedNice ? (
+                                        <span className="text-xs text-muted-foreground">
+                                            Updated: <span className="text-foreground">{lastUpdatedNice}</span>
+                                        </span>
+                                    ) : null}
+                                </div>
+
+                                {/* Rating summary */}
+                                <div className="mt-4 flex flex-wrap items-center gap-3">
+                                    {summary.reviewCount > 0 ? (
+                                        <>
+                                            <Stars value={summary.averageRating} idPrefix={`summary-${tool.id}`} />
+
+                                            <span className="text-sm font-semibold text-foreground">
+                                                {summary.averageRating.toFixed(1)}
+                                            </span>
+                                            <span className="text-sm text-muted-foreground">
+                                                ({summary.reviewCount} reviews)
+                                            </span>
+                                            <Link href="#reviews" className="text-sm text-primary hover:underline">
+                                                Read reviews →
+                                            </Link>
+                                        </>
+                                    ) : (
                                         <span className="text-sm text-muted-foreground">
-                                            ({summary.reviewCount} reviews)
+                                            No reviews yet.
                                         </span>
-                                        <Link href="#reviews" className="text-sm text-primary hover:underline">
-                                            Read reviews →
-                                        </Link>
-                                    </>
-                                ) : (
-                                    <span className="text-sm text-muted-foreground">
-                                        No reviews yet.
-                                    </span>
-                                )}
+                                    )}
+                                </div>
+
+                                {tool.tags?.length ? (
+                                    <div className="mt-4 flex flex-wrap gap-2">
+                                        {tool.tags.slice(0, 10).map((tag) => (
+                                            <span
+                                                key={tag}
+                                                className="text-[11px] px-2.5 py-1 rounded-full border border-border bg-background text-muted-foreground"
+                                            >
+                                                {tag}
+                                            </span>
+                                        ))}
+                                    </div>
+                                ) : null}
+
+                                {tool.website ? (
+                                    <div className="mt-3 text-xs text-muted-foreground">
+                                        🔗 {websiteDomain}
+                                    </div>
+                                ) : null}
+                            </div>
+                        </div>
+
+                        <div className="flex flex-col gap-3 sm:w-[260px]">
+
+                            <div className="flex flex-col gap-2">
+                                <Link
+                                    href={visitHref}
+                                    target="_blank"
+                                    rel="sponsored noopener noreferrer"
+                                    className="inline-flex items-center justify-center rounded-xl bg-primary px-5 py-3 text-primary-foreground font-semibold hover:bg-primary/90 transition text-base shadow-sm"
+                                >
+                                    🚀 Try {tool.name} Now
+                                </Link>
+                                <div className="rounded-xl border border-border bg-muted/40 p-3 text-xs text-muted-foreground text-center">
+                                    Disclosure: We may earn a commission if you sign up through our link — at no extra cost to you.
+                                </div>
+
+                                {/* ✅ هنا بالضبط تحط trust block */}
+                                <div className="rounded-xl border border-border bg-muted/40 p-3 text-xs text-muted-foreground text-center">
+                                    No signup required • Official website
+                                    <br />
+                                    We may earn a commission at no extra cost to you.
+                                </div>
                             </div>
 
-                            {tool.tags?.length ? (
-                                <div className="mt-4 flex flex-wrap gap-2">
-                                    {tool.tags.slice(0, 10).map((tag) => (
-                                        <span
-                                            key={tag}
-                                            className="text-[11px] px-2.5 py-1 rounded-full border border-border bg-background text-muted-foreground"
-                                        >
-                                            {tag}
-                                        </span>
-                                    ))}
-                                </div>
-                            ) : null}
+                            <Link
+                                href="#write-review"
+                                className="text-sm text-primary hover:underline"
+                            >
+                                Write a review →
+                            </Link>
 
-                            {tool.website ? (
-                                <div className="mt-3 text-xs text-muted-foreground">
-                                    🔗 {websiteDomain}
-                                </div>
-                            ) : null}
                         </div>
-                    </div>
-
-                    <div className="flex flex-col gap-3 sm:w-[260px]">
-                        <Link
-                            href={visitHref}
-                            target="_blank"
-                            rel="sponsored noopener noreferrer"
-                            className="inline-flex items-center justify-center rounded-xl bg-primary px-5 py-3 text-primary-foreground font-semibold hover:bg-primary/90 transition"
-                        >
-                            Visit website →
-                        </Link>
-
-                        {/* If you already have my-reviews page, this is perfect */}
-                        <Link
-                            href="#write-review"
-                            className="text-sm text-primary hover:underline"
-                        >
-                            Write a review →
-                        </Link>
 
                     </div>
                 </div>
@@ -370,6 +399,24 @@ export default async function ToolDetailsPage({
                         <p className="text-muted-foreground leading-relaxed">
                             {tool.description || "No description yet."}
                         </p>
+                        {/* ✅ CTA الثاني (بعد About) */}
+                        <div className="mt-6 flex flex-col items-center gap-3">
+
+                            <Link
+                                href={visitHref}
+                                target="_blank"
+                                rel="sponsored noopener noreferrer"
+                                className="inline-flex items-center justify-center rounded-xl bg-primary px-6 py-3 text-primary-foreground font-semibold hover:bg-primary/90 transition text-base shadow-md"
+                            >
+                                👉 Start Using {tool.name} for Free
+                            </Link>
+
+                            <div className="text-xs text-muted-foreground text-center max-w-md">
+                                Join thousands of users already using {tool.name} to improve their workflow.
+                            </div>
+
+                        </div>
+
                     </section>
                     <div className="my-6">
                         <div className="h-[90px] bg-muted flex items-center justify-center rounded-xl">
@@ -427,18 +474,7 @@ export default async function ToolDetailsPage({
 
                         </div>
                     ) : null}
-                    {tool.useCases?.length ? (
-                        <div className="mt-8 rounded-2xl border border-border bg-card p-6">
-                            <h2 className="text-xl font-semibold mb-4">Use cases</h2>
-                            <div className="grid md:grid-cols-2 gap-3">
-                                {tool.useCases.map((u, i) => (
-                                    <div key={i} className="px-3 py-2 rounded-lg border border-border">
-                                        {u}
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                    ) : null}
+
 
 
                     {/* ===== FAQ (outside Pros&Cons) ===== */}
@@ -550,7 +586,8 @@ export default async function ToolDetailsPage({
                             </div>
                         )}
                         <div id="write-review" className="scroll-mt-28">
-                            <ReviewForm toolId={tool.id} toolName={tool.name} />
+                            <ReviewForm toolId={toolIdStr} toolName={toolNameStr} />
+
                         </div>
 
                     </section>

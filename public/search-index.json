@@ -15,6 +15,40 @@
       "pricing": "Freemium, Pro $14.99/mo"
     },
     {
+      "id": "chatgpt",
+      "name": "ChatGPT",
+      "slug": "chatgpt",
+      "tagline": "AI chatbot for writing, coding, and everyday tasks",
+      "description": "ChatGPT is an AI-powered chatbot developed by OpenAI that helps users with writing, coding, research, and problem-solving. It can generate human-like text, answer questions, and assist with a wide range of tasks for individuals and businesses.",
+      "category": "productivity",
+      "tags": [
+        "ai chatbot",
+        "writing assistant",
+        "coding",
+        "productivity",
+        "openai",
+        "automation"
+      ],
+      "pricing": "https://chatgpt.com/"
+    },
+    {
+      "id": "claude-ai",
+      "name": "Claude",
+      "slug": "claude-ai",
+      "tagline": "AI assistant for writing, coding, and analysis by Anthropic",
+      "description": "Claude is an AI assistant developed by Anthropic, designed for writing, coding, and complex reasoning tasks. It is known for its safety, long context handling, and high-quality responses.",
+      "category": "productivity",
+      "tags": [
+        "ai assistant",
+        "claude ai",
+        "chatbot",
+        "writing",
+        "coding",
+        "anthropic"
+      ],
+      "pricing": "Freemium + Subscription"
+    },
+    {
       "id": "consensus",
       "name": "ConsensusAI",
       "slug": "consensus",
@@ -55,6 +89,22 @@
         "photoreal"
       ],
       "pricing": "Credits-based"
+    },
+    {
+      "id": "elevenlabs",
+      "name": "ElevenLabs",
+      "slug": "elevenlabs",
+      "tagline": "AI voice generator for realistic text-to-speech",
+      "description": "ElevenLabs is an AI voice generation platform that creates realistic and natural-sounding speech from text. It is widely used for voiceovers, audiobooks, and content creation.",
+      "category": "audio",
+      "tags": [
+        "ai voice",
+        "text to speech",
+        "voice generator",
+        "audio",
+        "ai speech"
+      ],
+      "pricing": "Freemium + Subscription"
     },
     {
       "id": "elevenlabs-voice",
@@ -100,34 +150,37 @@
     },
     {
       "id": "imageopt",
-      "name": "imageOpt AI",
+      "name": "imageOpt",
       "slug": "imageopt",
-      "tagline": "AI-powered image optimization for faster websites without quality loss",
-      "description": "ImageOpt AI is an AI-powered image optimization tool that compresses and enhances images for faster loading websites without sacrificing visual quality. It automatically adjusts images for performance and efficiency, making it ideal for developers, marketers, and content creators.\n",
+      "tagline": "Image optimization and resizing API for faster websites and apps.",
+      "description": "imageOpt is an image optimization service that compresses and resizes images automatically to improve web performance. It supports responsive delivery and modern formats to reduce bandwidth without losing quality. Ideal for developers and teams who want faster pages with minimal setup.",
       "category": "images",
       "tags": [
         "image optimization",
         "compression",
-        "performance",
-        "web",
-        "ai",
-        "speed"
+        "resizing",
+        "cdn",
+        "web performance",
+        "webp"
       ],
-      "pricing": "Freemium + Subscription ($20/month) / Free plan available. Pro plan starts at $20/month per user. Team plan at $200/month with shared credits. Includes usage-based pricing and BYOK (Bring Your Own Keys)."
+      "pricing": "Free + Subscription (from $5/mo)"
     },
     {
       "id": "jasper-ai",
       "name": "Jasper AI",
       "slug": "jasper-ai",
-      "tagline": "AI copywriter and content strategy platform",
-      "description": "Jasper is an AI marketing copilot that helps enterprise teams create high-performing content faster. It's built for marketing performance, offering brand voice optimization, SEO integration, and a suite of tools for generating blog posts, social media content, and ad copy that converts.",
-      "category": "writing",
+      "tagline": "AI copywriting assistant for marketing, ads, and SEO content",
+      "description": "Jasper AI is a marketing-focused AI writing platform that helps teams create high-converting copy for ads, emails, landing pages, and SEO blog posts. It offers brand voice, templates, and workflows designed for faster content production while keeping messaging consistent.",
+      "category": "marketing",
       "tags": [
-        "writing",
+        "ai writing",
+        "copywriting",
         "marketing",
-        "enterprise"
+        "ads",
+        "seo",
+        "brand voice"
       ],
-      "pricing": "Paid, from $39/mo"
+      "pricing": "Paid (Subscription, from ~$49/month)"
     },
     {
       "id": "leonardo-ai",
@@ -159,17 +212,19 @@
     },
     {
       "id": "midjourneyx",
-      "name": "MidJourneyX",
+      "name": "Midjourney",
       "slug": "midjourneyx",
-      "tagline": "Creative image prompts for concept art",
-      "description": "Unlock your artistic potential with MidJourneyX, a powerful tool for generating creative image prompts and concept art. Ideal for designers and artists, it features high-detail renders and batch generation capabilities. Whether you're creating game assets, book illustrations, or marketing visuals, MidJourneyX delivers stunning, professional-quality images from simple text descriptions.",
+      "tagline": "AI image generator for creating high-quality visuals from text",
+      "description": "Midjourney is an AI image generation tool that creates stunning visuals from text prompts. It is widely used by designers, artists, and marketers to generate creative and realistic images.\n",
       "category": "images",
       "tags": [
-        "images",
+        "ai image generator",
+        "text to image",
+        "design",
         "art",
-        "generator"
+        "midjourney ai"
       ],
-      "pricing": "Subscription"
+      "pricing": "Paid"
     },
     {
       "id": "murf",
@@ -245,15 +300,17 @@
       "id": "pictory",
       "name": "Pictory",
       "slug": "pictory",
-      "tagline": "Turn scripts into shareable videos",
-      "description": "Pictory automatically turns your scripts and blog posts into engaging, shareable videos. It features auto-captions and a vast stock library, making video marketing accessible to everyone.",
+      "tagline": "AI tool to create videos from text and scripts",
+      "description": "Pictory is an AI video creation tool that converts text, scripts, and blog posts into engaging videos. It is ideal for content creators, marketers, and businesses.\n",
       "category": "video",
       "tags": [
-        "video",
-        "script",
-        "social"
+        "ai video",
+        "text to video",
+        "marketing",
+        "content creation",
+        "youtube"
       ],
-      "pricing": "Subscription"
+      "pricing": "Paid + Trial"
     },
     {
       "id": "playht",
@@ -313,17 +370,19 @@
     },
     {
       "id": "runwayml",
-      "name": "Runway",
+      "name": "Runway ML",
       "slug": "runwayml",
-      "tagline": "AI tools for video creation and editing",
-      "description": "Runway is a comprehensive suite of AI tools for video creation and editing. From background removal to Gen-2 video generation, it empowers creators to produce professional visual content.",
+      "tagline": "AI video generation and editing platform for creators and teams",
+      "description": "Runway ML is an advanced AI video platform that allows users to generate, edit, and enhance videos using AI. It offers tools like text-to-video, background removal, and video editing powered by machine learning.\n",
       "category": "video",
       "tags": [
-        "video",
-        "editing",
-        "generator"
+        "ai video",
+        "text to video",
+        "video editing",
+        "content creation",
+        "generative ai"
       ],
-      "pricing": "Freemium, Pro $49/mo"
+      "pricing": "Freemium + Subscription"
     },
     {
       "id": "scribely",
@@ -354,18 +413,38 @@
       "pricing": "Paid, from $89/mo"
     },
     {
-      "id": "synthdocs",
-      "name": "SynthDocs",
-      "slug": "synthdocs",
-      "tagline": "Auto-generated API docs from code & comments",
-      "description": "Auto-generated API docs from code & comments",
+      "id": "synth-ai",
+      "name": "Synth AI",
+      "slug": "synth-ai",
+      "tagline": "Test, evaluate, and rollout LLM systems with credits and BYOK support.",
+      "description": "Synth AI provides tooling for evaluation and rollout workflows for LLM applications. It supports BYOK (Bring Your Own Keys) for rollouts and includes credits-based plans for different team sizes. Great for developers and teams shipping production AI features.",
       "category": "developer-tools",
       "tags": [
-        "developer",
-        "docs",
-        "api"
+        "llm evals",
+        "rollout",
+        "byok",
+        "ai testing",
+        "developer tools",
+        "observability"
       ],
-      "pricing": "Freemium"
+      "pricing": "Freemium + Subscription (from $20/mo"
+    },
+    {
+      "id": "synthdocs",
+      "name": "DocSynth",
+      "slug": "synthdocs",
+      "tagline": "Generate synthetic Q&A datasets from documents for LLM training",
+      "description": "DocSynth transforms PDFs and text documents into high-quality synthetic Q&A datasets for LLM fine-tuning and evaluation. It supports multiple generators (DocQA, WebQA) and workflow tools for dataset management. Built for researchers and AI teams who need structured training data fast.",
+      "category": "research",
+      "tags": [
+        "synthetic data",
+        "qa generation",
+        "llm training",
+        "datasets",
+        "research",
+        "fine-tuning"
+      ],
+      "pricing": "Free trial + Enterprise"
     },
     {
       "id": "synthesia-lite",
@@ -399,16 +478,19 @@
       "id": "writesonic",
       "name": "Writesonic",
       "slug": "writesonic",
-      "tagline": "AI writer and SEO content generator",
-      "description": "Writesonic is an AI-powered content writing tool that helps you create SEO-friendly content for blogs, Facebook ads, Google ads, and Shopify. It features an AI article writer capable of generating long-form content, a chatbot (Chatsonic) with verified data, and custom AI models trained on your brand.",
+      "tagline": "AI writing and marketing tool for blogs, ads, and SEO content",
+      "description": "Writesonic is an AI writing tool designed for marketers, bloggers, and businesses to create high-quality content quickly. It helps generate blog posts, ads, product descriptions, and SEO-optimized articles using advanced AI models.",
       "category": "writing",
       "tags": [
-        "writing",
+        "ai writing",
+        "copywriting",
         "seo",
-        "blogging"
+        "blogging",
+        "marketing",
+        "content generation"
       ],
-      "pricing": "Freemium, Paid from $12/mo"
+      "pricing": "Freemium + Subscription"
     }
   ],
-  "generatedAt": "2026-02-16T15:53:46.876Z"
+  "generatedAt": "2026-02-19T00:55:19.853Z"
 }

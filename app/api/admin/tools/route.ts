@@ -91,14 +91,26 @@ export async function POST(req: Request) {
         const nowIso = new Date().toISOString();
         const lastUpdated = String(body?.lastUpdated || "").trim() || nowIso.slice(0, 10);
 
+        const sponsorUntilRaw = body?.sponsorUntil ? String(body.sponsorUntil) : "";
+        const sponsorUntilIso = sponsorUntilRaw
+            ? (Number.isFinite(Date.parse(sponsorUntilRaw))
+                ? new Date(sponsorUntilRaw).toISOString()
+                : "")
+            : "";
+
         const tool: any = {
             id: slug,
             slug,
 
             name,
+
+            // ✅ keep both to avoid breaking UI
             websiteUrl,
+            website: websiteUrl,
+
             affiliateUrl: affiliateUrl || "",
             logo: logo || "",
+
             tagline: String(body?.tagline || "").trim(),
             description: String(body?.description || "").trim(),
             category,
@@ -118,9 +130,15 @@ export async function POST(req: Request) {
             reviewedBy: String(body?.reviewedBy || "AIToolsHub Team").trim(),
             lastUpdated,
             updatedAt: nowIso,
-
             createdAt: String(body?.createdAt || "").trim() || nowIso,
+
+            // ✅ Sponsored fields (optional)
+            sponsored: Boolean(body?.sponsored),
+            sponsorLabel: String(body?.sponsorLabel || "Sponsored").trim(),
+            sponsorPriority: Number(body?.sponsorPriority || 0),
+            sponsorUntil: sponsorUntilIso || null,
         };
+
 
         const db = getAdminDb();
 

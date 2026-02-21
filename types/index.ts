@@ -23,6 +23,13 @@ export interface Tool {
     useCases?: string[];
     pros?: string[];
     cons?: string[];
+    sponsored?: boolean;         // true only if paid placement
+    sponsorActive?: boolean;     // toggle on/off
+    sponsorLabel?: string;       // e.g. "Sponsored"
+    heroImage?: string;     // background image URL (blurred)
+    sponsorUntil?: string;      // ISO date string
+    sponsorPriority?: number;   // higher = more priority
+
 }
 
 export interface Review {

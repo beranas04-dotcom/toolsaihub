@@ -71,5 +71,9 @@ export function getDb() {
     return getAdminDb();
 }
 
-
-
+/**
+ * Convenient named exports (safe + no double-init)
+ * Use these in new code: import { adminDb } from "@/lib/firebaseadmin";
+ */
+export const adminApp = getAdminApp();
+export const adminDb = getAdminDb();

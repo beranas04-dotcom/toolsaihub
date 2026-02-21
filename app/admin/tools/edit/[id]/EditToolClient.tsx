@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { getAuth } from "firebase/auth";
 
@@ -44,6 +44,12 @@ type ToolLike = {
     lastUpdated?: string;
 
     adminNotes?: string;
+
+    // ✅ Sponsored fields
+    sponsored?: boolean;
+    sponsorLabel?: string;
+    sponsorPriority?: number;
+    sponsorUntil?: string | null;
 };
 
 const CATEGORIES = [
@@ -113,7 +119,7 @@ function TabButton({
     onClick,
 }: {
     active: boolean;
-    children: React.ReactNode;
+    children: ReactNode;
     onClick: () => void;
 }) {
     return (
@@ -122,14 +128,20 @@ function TabButton({
             onClick={onClick}
             className={[
                 "px-3 py-2 rounded-xl text-sm font-semibold border transition",
-                active
-                    ? "bg-primary text-primary-foreground border-primary"
-                    : "bg-card border-border hover:border-primary/50",
+                active ? "bg-primary text-primary-foreground border-primary" : "bg-card border-border hover:border-primary/50",
             ].join(" ")}
         >
             {children}
         </button>
     );
+}
+
+// ✅ helper: date string => YYYY-MM-DD
+function toDateInputValue(v: any): string {
+    if (!v) return "";
+    const ms = Date.parse(String(v));
+    if (Number.isFinite(ms)) return new Date(ms).toISOString().slice(0, 10);
+    return "";
 }
 
 export default function EditToolClient({ tool }: { tool: ToolLike }) {
@@ -139,6 +151,7 @@ export default function EditToolClient({ tool }: { tool: ToolLike }) {
 
     const [tab, setTab] = useState<"basics" | "pricing" | "content" | "seo" | "admin">("basics");
 
+    // ✅ form state (NO hooks inside)
     const [form, setForm] = useState<ToolLike>(() => ({
         ...tool,
         tags: Array.isArray(tool.tags) ? tool.tags : [],
@@ -148,6 +161,12 @@ export default function EditToolClient({ tool }: { tool: ToolLike }) {
         cons: Array.isArray(tool.cons) ? tool.cons : [],
         useCases: Array.isArray(tool.useCases) ? tool.useCases : [],
     }));
+
+    // ✅ Sponsored states (hooks must be here)
+    const [sponsored, setSponsored] = useState<boolean>(Boolean((tool as any)?.sponsored));
+    const [sponsorLabel, setSponsorLabel] = useState<string>((tool as any)?.sponsorLabel || "Sponsored");
+    const [sponsorPriority, setSponsorPriority] = useState<number>(Number((tool as any)?.sponsorPriority || 0));
+    const [sponsorUntil, setSponsorUntil] = useState<string>(toDateInputValue((tool as any)?.sponsorUntil));
 
     const tagsText = useMemo(() => (form.tags || []).join(", "), [form.tags]);
     const screenshotsText = useMemo(() => (form.screenshots || []).join("\n"), [form.screenshots]);
@@ -192,6 +211,12 @@ export default function EditToolClient({ tool }: { tool: ToolLike }) {
                 pros: Array.isArray(form.pros) ? form.pros : [],
                 cons: Array.isArray(form.cons) ? form.cons : [],
                 useCases: Array.isArray(form.useCases) ? form.useCases : [],
+
+                // ✅ Sponsored fields saved to Firestore
+                sponsored: Boolean(sponsored),
+                sponsorLabel: sponsored ? (sponsorLabel || "Sponsored").trim() : null,
+                sponsorPriority: sponsored ? Number(sponsorPriority || 0) : 0,
+                sponsorUntil: sponsored && sponsorUntil ? new Date(sponsorUntil).toISOString() : null,
             });
 
             const res = await fetch(`/api/admin/tools/${tool.id}`, {
@@ -407,29 +432,17 @@ export default function EditToolClient({ tool }: { tool: ToolLike }) {
 
                             <div className="flex flex-wrap gap-6 pt-2">
                                 <label className="flex items-center gap-2 text-sm">
-                                    <input
-                                        type="checkbox"
-                                        checked={!!form.featured}
-                                        onChange={(e) => setField("featured", e.target.checked)}
-                                    />
+                                    <input type="checkbox" checked={!!form.featured} onChange={(e) => setField("featured", e.target.checked)} />
                                     Featured
                                 </label>
 
                                 <label className="flex items-center gap-2 text-sm">
-                                    <input
-                                        type="checkbox"
-                                        checked={!!form.verified}
-                                        onChange={(e) => setField("verified", e.target.checked)}
-                                    />
+                                    <input type="checkbox" checked={!!form.verified} onChange={(e) => setField("verified", e.target.checked)} />
                                     Verified
                                 </label>
 
                                 <label className="flex items-center gap-2 text-sm">
-                                    <input
-                                        type="checkbox"
-                                        checked={!!form.freeTrial}
-                                        onChange={(e) => setField("freeTrial", e.target.checked)}
-                                    />
+                                    <input type="checkbox" checked={!!form.freeTrial} onChange={(e) => setField("freeTrial", e.target.checked)} />
                                     Free Trial
                                 </label>
                             </div>
@@ -452,11 +465,7 @@ export default function EditToolClient({ tool }: { tool: ToolLike }) {
 
                                 <div className="flex items-end">
                                     <label className="flex items-center gap-2 text-sm">
-                                        <input
-                                            type="checkbox"
-                                            checked={!!form.freeTrial}
-                                            onChange={(e) => setField("freeTrial", e.target.checked)}
-                                        />
+                                        <input type="checkbox" checked={!!form.freeTrial} onChange={(e) => setField("freeTrial", e.target.checked)} />
                                         Has Free Trial
                                     </label>
                                 </div>
@@ -471,9 +480,7 @@ export default function EditToolClient({ tool }: { tool: ToolLike }) {
                                     className="mt-2 w-full px-4 py-2 rounded-xl border border-input bg-background"
                                     placeholder={`Free: $0/mo ...\nPro: $20/mo ...\nTeam: $200/mo ...`}
                                 />
-                                <p className="mt-2 text-xs text-muted-foreground">
-                                    حط هنا Plans كاملة بحال اللي عطيتني ديال Synth (مزيان لـ SEO).
-                                </p>
+                                <p className="mt-2 text-xs text-muted-foreground">حط هنا Plans كاملة (مزيان لـ SEO).</p>
                             </div>
                         </div>
                     ) : null}
@@ -549,7 +556,7 @@ export default function EditToolClient({ tool }: { tool: ToolLike }) {
                                     value={form.metaTitle || ""}
                                     onChange={(e) => setField("metaTitle", e.target.value)}
                                     className="mt-2 w-full px-4 py-2 rounded-xl border border-input bg-background"
-                                    placeholder="Synth AI — Pricing, Features, Alternatives"
+                                    placeholder="Tool — Pricing, Features, Alternatives"
                                 />
                             </div>
 
@@ -602,6 +609,60 @@ export default function EditToolClient({ tool }: { tool: ToolLike }) {
                                 />
                             </div>
 
+                            {/* ✅ Sponsored block */}
+                            <div className="rounded-2xl border border-border bg-muted/20 p-5">
+                                <div className="font-semibold mb-3">💰 Sponsored Settings</div>
+
+                                <label className="flex items-center gap-2 text-sm">
+                                    <input type="checkbox" checked={sponsored} onChange={(e) => setSponsored(e.target.checked)} />
+                                    Enable Sponsored
+                                </label>
+
+                                {sponsored ? (
+                                    <div className="mt-4 grid gap-4">
+                                        <div>
+                                            <label className="text-sm font-medium">Sponsor Label</label>
+                                            <input
+                                                value={sponsorLabel}
+                                                onChange={(e) => setSponsorLabel(e.target.value)}
+                                                className="mt-2 w-full px-4 py-2 rounded-xl border border-input bg-background"
+                                                placeholder="Sponsored / Partner / Ad"
+                                            />
+                                        </div>
+
+                                        <div>
+                                            <label className="text-sm font-medium">Sponsor Priority (higher = higher rank)</label>
+                                            <input
+                                                type="number"
+                                                value={sponsorPriority}
+                                                onChange={(e) => setSponsorPriority(Number(e.target.value))}
+                                                className="mt-2 w-full px-4 py-2 rounded-xl border border-input bg-background"
+                                                placeholder="10"
+                                            />
+                                        </div>
+
+                                        <div>
+                                            <label className="text-sm font-medium">Sponsor Until (optional)</label>
+                                            <input
+                                                type="date"
+                                                value={sponsorUntil}
+                                                onChange={(e) => setSponsorUntil(e.target.value)}
+                                                className="mt-2 w-full px-4 py-2 rounded-xl border border-input bg-background"
+                                            />
+                                            <p className="mt-2 text-xs text-muted-foreground">
+                                                إلا خليه خاوي = sponsored يبقى active بلا نهاية.
+                                            </p>
+                                        </div>
+
+                                        <div className="text-xs text-muted-foreground">
+                                            Note: Sponsored tools may appear first on /tools (with disclosure shown).
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <p className="mt-3 text-xs text-muted-foreground">Sponsored is disabled for this tool.</p>
+                                )}
+                            </div>
+
                             <div>
                                 <label className="text-sm font-medium">Admin Notes (private)</label>
                                 <textarea
@@ -648,15 +709,18 @@ export default function EditToolClient({ tool }: { tool: ToolLike }) {
                                 </div>
                             ) : null}
 
+                            {sponsored ? (
+                                <div className="text-xs inline-flex px-2 py-1 rounded-full bg-yellow-500/20 text-yellow-300 font-semibold w-fit border border-yellow-500/30">
+                                    ⭐ {sponsorLabel || "Sponsored"}
+                                </div>
+                            ) : null}
+
                             {(form.tags || []).length ? (
                                 <div>
                                     <div className="text-xs text-muted-foreground mb-1">Tags</div>
                                     <div className="flex flex-wrap gap-2">
                                         {(form.tags || []).slice(0, 10).map((t) => (
-                                            <span
-                                                key={t.toLowerCase()}
-                                                className="px-2 py-1 rounded-full bg-muted border border-border text-xs"
-                                            >
+                                            <span key={t.toLowerCase()} className="px-2 py-1 rounded-full bg-muted border border-border text-xs">
                                                 {t}
                                             </span>
                                         ))}
@@ -667,7 +731,7 @@ export default function EditToolClient({ tool }: { tool: ToolLike }) {
                             {form.website ? (
                                 <div>
                                     <div className="text-xs text-muted-foreground">Website</div>
-                                    <a className="text-primary break-all hover:underline" href={form.website} target="_blank">
+                                    <a className="text-primary break-all hover:underline" href={form.website} target="_blank" rel="noreferrer">
                                         {form.website}
                                     </a>
                                 </div>
