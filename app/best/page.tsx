@@ -1,65 +1,64 @@
-import Link from 'next/link';
-import { getPaginatedTopics } from '@/lib/topics';
-import { Metadata } from "next";
+import type { Metadata } from "next";
+import Link from "next/link";
 import { siteMetadata } from "@/lib/siteMetadata";
+import { getAllTopics } from "@/lib/topics";
+
+export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-    title: "Best AI Tools Lists - AIToolsHub",
+    title: `Best AI Tools by Category | ${siteMetadata.siteName}`,
     description:
-        "Explore our curated collections of the best AI tools for every profession and use case.",
-    alternates: {
-        canonical: `${siteMetadata.siteUrl.replace(/\/$/, "")}/best`,
-    },
+        "Explore the best AI tools by category. Carefully curated picks with pricing, features, and direct links.",
+    alternates: { canonical: `${siteMetadata.siteUrl.replace(/\/$/, "")}/best` },
 };
 
-
-export default function BestPage() {
-    const { topics, totalPages } = getPaginatedTopics(1, 20);
+export default function BestIndexPage() {
+    const topics = getAllTopics();
 
     return (
-        <main className="container mx-auto px-4 py-12 max-w-6xl">
-            <h1 className="text-4xl font-bold mb-4">Curated Best AI Tools</h1>
-            <p className="text-xl text-muted-foreground mb-12 max-w-2xl">
-                Discover the top-rated artificial intelligence software hand-picked for your specific needs, industry, or role.
-            </p>
+        <main className="container mx-auto px-6 py-10">
+            <section className="mb-10 rounded-3xl border border-border bg-card p-8 relative overflow-hidden">
+                <div className="absolute inset-0 bg-gradient-to-br from-primary/12 via-transparent to-transparent" />
+                <div className="relative">
+                    <h1 className="text-3xl md:text-4xl font-bold">Best AI Tools (Money Pages)</h1>
+                    <p className="text-muted-foreground mt-2 max-w-2xl">
+                        Pick a category to see the best tools with quick comparisons, pricing notes, and direct links.
+                    </p>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
-                {topics.map((topic) => (
+                    <div className="mt-6 flex flex-wrap gap-3 text-sm">
+                        <div className="rounded-full border border-border bg-background px-4 py-2">
+                            ✅ <span className="font-semibold">{topics.length}</span> categories
+                        </div>
+                        <div className="rounded-full border border-border bg-background px-4 py-2">
+                            💰 Optimized for affiliate clicks
+                        </div>
+                        <div className="rounded-full border border-border bg-background px-4 py-2">
+                            🔍 Built for SEO + internal linking
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                {topics.map((t) => (
                     <Link
-                        key={topic.slug}
-                        href={`/best/${topic.slug}`}
-                        className="group block p-6 border border-border rounded-xl hover:shadow-lg hover:border-primary/50 transition duration-300 bg-card"
+                        key={t.slug}
+                        href={`/best/${t.slug}`}
+                        className="group rounded-2xl border border-border bg-card p-6 hover:border-primary/60 hover:shadow-md transition"
                     >
-                        <h2 className="text-lg font-bold mb-3 group-hover:text-primary transition-colors">
-                            {topic.title}
+                        <div className="text-xs text-muted-foreground mb-2">Category</div>
+                        <h2 className="text-xl font-bold group-hover:text-primary transition">
+                            {t.title}
                         </h2>
-                        <p className="text-sm text-muted-foreground line-clamp-2">
-                            {topic.description}
+                        <p className="mt-2 text-sm text-muted-foreground line-clamp-3">
+                            {t.description}
                         </p>
-                        <div className="mt-4 text-primary text-sm font-medium flex items-center">
-                            View Collection
-                            <svg className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                            </svg>
+                        <div className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-primary">
+                            View picks <span className="transition group-hover:translate-x-0.5">→</span>
                         </div>
                     </Link>
                 ))}
             </div>
-
-            {/* Pagination Controls */}
-            {totalPages > 1 && (
-                <div className="flex justify-center gap-2">
-                    <span className="px-4 py-2 text-muted-foreground">
-                        Page 1 of {totalPages}
-                    </span>
-                    <Link
-                        href="/best/page/2"
-                        className="px-4 py-2 border border-border rounded-lg hover:bg-muted"
-                    >
-                        Next
-                    </Link>
-                </div>
-            )}
         </main>
     );
 }

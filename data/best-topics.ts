@@ -2,6 +2,8 @@ export interface Topic {
     slug: string;
     title: string;
     description: string;
+    keyword?: string;
+    category?: string;
     match?: {
         categories?: string[];
         tags?: string[];

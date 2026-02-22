@@ -107,20 +107,6 @@
       "pricing": "Freemium + Subscription"
     },
     {
-      "id": "elevenlabs-voice",
-      "name": "ElevenLabs",
-      "slug": "elevenlabs-voice",
-      "tagline": "Ultra‑natural text-to-speech & voice cloning",
-      "description": "Ultra‑natural text-to-speech & voice cloning",
-      "category": "audio",
-      "tags": [
-        "audio",
-        "tts",
-        "voice"
-      ],
-      "pricing": "Credits-based"
-    },
-    {
       "id": "fireflies",
       "name": "Fireflies (example)",
       "slug": "fireflies",
@@ -492,5 +478,5 @@
       "pricing": "Freemium + Subscription"
     }
   ],
-  "generatedAt": "2026-02-19T00:55:19.853Z"
+  "generatedAt": "2026-02-22T20:36:05.924Z"
 }

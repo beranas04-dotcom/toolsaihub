@@ -12,10 +12,12 @@ export default function robots(): MetadataRoute.Robots {
                 disallow: [
                     "/admin",
                     "/api",
-                    "/_next", // 🔥 مهم باش Google ما يديرش index لملفات Next.js
+                    "/_next",
+                    "/private",
                 ],
             },
         ],
         sitemap: `${base}/sitemap.xml`,
+        host: base,
     };
 }

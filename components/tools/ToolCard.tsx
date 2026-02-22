@@ -129,7 +129,6 @@ export default function ToolCard({ tool }: { tool: Tool }) {
                     >
                         View Details
                     </Link>
-
                     {hasOut ? (
                         <a
                             href={outUrl}

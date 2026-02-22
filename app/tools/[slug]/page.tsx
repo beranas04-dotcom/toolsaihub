@@ -130,6 +130,34 @@ export default async function ToolDetailsPage({
         operatingSystem: "Web",
         url: canonical,
     };
+    const breadcrumbJsonLd = {
+        "@context": "https://schema.org",
+        "@type": "BreadcrumbList",
+        itemListElement: [
+            {
+                "@type": "ListItem",
+                position: 1,
+                name: "Home",
+                item: siteMetadata.siteUrl,
+            },
+            {
+                "@type": "ListItem",
+                position: 2,
+                name: "Blog",
+                item: `${siteMetadata.siteUrl}/blog`,
+            },
+            {
+                "@type": "ListItem",
+                position: 3,
+                name: tool.name,
+                item: `${siteMetadata.siteUrl}/tools/${tool.slug}`,
+            },
+        ],
+    };
+    <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
+    />
 
     const breadcrumbLd = {
         "@context": "https://schema.org",
@@ -360,7 +388,7 @@ export default async function ToolDetailsPage({
                                     rel="sponsored noopener noreferrer"
                                     className="inline-flex items-center justify-center rounded-xl bg-primary px-5 py-3 text-primary-foreground font-semibold hover:bg-primary/90 transition text-base shadow-sm"
                                 >
-                                    🚀 Try {tool.name} Now
+                                    Try {tool.name} Now
                                 </Link>
                                 <div className="rounded-xl border border-border bg-muted/40 p-3 text-xs text-muted-foreground text-center">
                                     Disclosure: We may earn a commission if you sign up through our link — at no extra cost to you.
@@ -408,7 +436,7 @@ export default async function ToolDetailsPage({
                                 rel="sponsored noopener noreferrer"
                                 className="inline-flex items-center justify-center rounded-xl bg-primary px-6 py-3 text-primary-foreground font-semibold hover:bg-primary/90 transition text-base shadow-md"
                             >
-                                👉 Start Using {tool.name} for Free
+                                *  Start Using {tool.name}  *
                             </Link>
 
                             <div className="text-xs text-muted-foreground text-center max-w-md">
@@ -646,11 +674,26 @@ export default async function ToolDetailsPage({
                                             </div>
                                         ) : null}
                                     </Link>
+
                                 ))}
                             </div>
                         </section>
                     ) : null}
                 </aside>
+                <div className="mt-12 rounded-2xl border border-border bg-muted/30 p-6">
+                    <h3 className="text-xl font-bold mb-3">📚 Learn & Guides</h3>
+
+                    <p className="text-sm text-muted-foreground mb-4">
+                        Want to get the most out of this tool? Check our detailed guides and comparisons.
+                    </p>
+
+                    <Link
+                        href="/blog"
+                        className="inline-block text-primary font-semibold hover:underline"
+                    >
+                        Read Guides →
+                    </Link>
+                </div>
             </div>
         </main>
     );
