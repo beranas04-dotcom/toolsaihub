@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
-import { getAdminAuth } from "@/lib/firebaseAdmin";
 import { cookies } from "next/headers";
+import { getAdminAuth } from "@/lib/firebaseAdmin";
 
 export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
 
 const COOKIE_NAME = "aitoolshub_token";
 
@@ -19,7 +20,8 @@ export async function GET() {
                 admin: (decoded as any).admin === true,
             },
         });
-    } catch {
+    } catch (e: any) {
+        console.error("WHOAMI_ERROR:", e?.message);
         return NextResponse.json({ user: null }, { status: 401 });
     }
 }

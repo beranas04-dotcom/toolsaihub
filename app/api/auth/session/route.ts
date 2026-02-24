@@ -4,9 +4,10 @@ import { cookies } from "next/headers";
 import { getAdminAuth } from "@/lib/firebaseAdmin";
 
 export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
 
 const COOKIE_NAME = "aitoolshub_token";
-const EXPIRES_IN = 1000 * 60 * 60 * 24 * 7; // 7 days in ms
+const EXPIRES_IN = 1000 * 60 * 60 * 24 * 7; // 7 days
 
 export async function POST(req: Request) {
     try {
@@ -19,27 +20,33 @@ export async function POST(req: Request) {
 
         const adminAuth = getAdminAuth();
 
-        // ✅ Verify ID token first (ensures it's real)
+        // 1) verify idToken
         const decoded = await adminAuth.verifyIdToken(idToken, true);
 
-        // ✅ Create secure session cookie
+        // 2) OPTIONAL HARD BLOCK: allow only your admin emails to create session
+        const email = (decoded as any).email?.toLowerCase();
+        const raw = process.env.NEXT_PUBLIC_ADMIN_EMAILS || "";
+        const admins = raw.split(",").map(e => e.trim().toLowerCase()).filter(Boolean);
+
+        if (!email || !admins.includes(email)) {
+            return NextResponse.json({ error: "Not allowed" }, { status: 403 });
+        }
+
+        // 3) create session cookie
         const sessionCookie = await adminAuth.createSessionCookie(idToken, {
             expiresIn: EXPIRES_IN,
         });
 
-        cookies().set(COOKIE_NAME, sessionCookie, {
+        const cookieStore = cookies();
+        cookieStore.set(COOKIE_NAME, sessionCookie, {
             httpOnly: true,
-            secure: process.env.NODE_ENV === "production",
+            secure: true,          // ✅ forced true on Vercel (https)
             sameSite: "lax",
             path: "/",
-            maxAge: EXPIRES_IN / 1000, // seconds
+            maxAge: EXPIRES_IN / 1000,
         });
 
-        return NextResponse.json({
-            ok: true,
-            uid: decoded.uid,
-            isAdmin: (decoded as any).admin === true,
-        });
+        return NextResponse.json({ ok: true });
     } catch (e: any) {
         console.error("SESSION_ERROR:", e?.message, e);
         return NextResponse.json(
@@ -50,9 +57,10 @@ export async function POST(req: Request) {
 }
 
 export async function DELETE() {
-    cookies().set(COOKIE_NAME, "", {
+    const cookieStore = cookies();
+    cookieStore.set(COOKIE_NAME, "", {
         httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
+        secure: true,
         sameSite: "lax",
         path: "/",
         maxAge: 0,
