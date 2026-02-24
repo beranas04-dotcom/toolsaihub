@@ -1,13 +1,12 @@
 // app/api/auth/session/route.ts
 import { NextResponse } from "next/server";
-import { cookies } from "next/headers";
 import { getAdminAuth } from "@/lib/firebaseAdmin";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
 const COOKIE_NAME = "aitoolshub_token";
-const EXPIRES_IN = 1000 * 60 * 60 * 24 * 7; // 7 days
+const EXPIRES_IN = 60 * 60 * 24 * 7; // 7 days (seconds)
 
 export async function POST(req: Request) {
     try {
@@ -20,10 +19,10 @@ export async function POST(req: Request) {
 
         const adminAuth = getAdminAuth();
 
-        // 1) verify idToken
+        // 1) verify
         const decoded = await adminAuth.verifyIdToken(idToken, true);
 
-        // 2) OPTIONAL HARD BLOCK: allow only your admin emails to create session
+        // 2) allow only admin emails (security)
         const email = (decoded as any).email?.toLowerCase();
         const raw = process.env.NEXT_PUBLIC_ADMIN_EMAILS || "";
         const admins = raw.split(",").map(e => e.trim().toLowerCase()).filter(Boolean);
@@ -34,19 +33,20 @@ export async function POST(req: Request) {
 
         // 3) create session cookie
         const sessionCookie = await adminAuth.createSessionCookie(idToken, {
-            expiresIn: EXPIRES_IN,
+            expiresIn: EXPIRES_IN * 1000,
         });
 
-        const cookieStore = cookies();
-        cookieStore.set(COOKIE_NAME, sessionCookie, {
+        // ✅ IMPORTANT: set cookie on the Response object
+        const res = NextResponse.json({ ok: true });
+        res.cookies.set(COOKIE_NAME, sessionCookie, {
             httpOnly: true,
-            secure: true,          // ✅ forced true on Vercel (https)
+            secure: true, // vercel is https
             sameSite: "lax",
             path: "/",
-            maxAge: EXPIRES_IN / 1000,
+            maxAge: EXPIRES_IN,
         });
 
-        return NextResponse.json({ ok: true });
+        return res;
     } catch (e: any) {
         console.error("SESSION_ERROR:", e?.message, e);
         return NextResponse.json(
@@ -57,14 +57,13 @@ export async function POST(req: Request) {
 }
 
 export async function DELETE() {
-    const cookieStore = cookies();
-    cookieStore.set(COOKIE_NAME, "", {
+    const res = NextResponse.json({ ok: true });
+    res.cookies.set(COOKIE_NAME, "", {
         httpOnly: true,
         secure: true,
         sameSite: "lax",
         path: "/",
         maxAge: 0,
     });
-
-    return NextResponse.json({ ok: true });
+    return res;
 }
