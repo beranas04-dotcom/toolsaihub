@@ -2,45 +2,46 @@ import "server-only";
 import { cookies } from "next/headers";
 import { getAdminAuth } from "@/lib/firebaseAdmin";
 
-function getAdminEmailAllowlist() {
-    return (process.env.ADMIN_EMAILS || "")
-        .split(",")
-        .map((s) => s.trim().toLowerCase())
-        .filter(Boolean);
-}
+const COOKIE_NAME = "aitoolshub_token"; // ✅ نفس الاسم اللي كتستعمل ف /api/auth/session
 
-export type ServerSessionUser = {
+type SessionUser = {
     uid: string;
-    email: string;
+    email: string | null;
     isAdmin: boolean;
 };
 
-export async function getServerSessionUser(): Promise<ServerSessionUser | null> {
-    const token =
-        cookies().get("aitoolshub_token")?.value || cookies().get("__session")?.value;
+function getAdminEmails(): string[] {
+    const raw = process.env.ADMIN_EMAILS || "";
+    return raw
+        .split(",")
+        .map((e) => e.trim().toLowerCase())
+        .filter(Boolean);
+}
 
-    if (!token) return null;
-
+export async function getServerSessionUser(): Promise<SessionUser | null> {
     try {
-        const decoded = await getAdminAuth().verifyIdToken(token);
-        const email = String(decoded.email || "").toLowerCase();
-        if (!email) return null;
+        const sessionCookie = cookies().get(COOKIE_NAME)?.value;
+        if (!sessionCookie) return null;
 
-        const allowlist = getAdminEmailAllowlist();
+        const adminAuth = getAdminAuth();
+
+        // ✅ verify SESSION cookie (ماشي idToken)
+        const decoded = await adminAuth.verifySessionCookie(sessionCookie, true);
+
+        const email = (decoded.email || null) as string | null;
+
+        // ✅ admin by custom claim OR by ADMIN_EMAILS
+        const admins = getAdminEmails();
+        const isAdmin =
+            (decoded as any).admin === true ||
+            (email ? admins.includes(email.toLowerCase()) : false);
 
         return {
             uid: decoded.uid,
             email,
-            isAdmin: allowlist.includes(email),
+            isAdmin,
         };
     } catch {
         return null;
     }
-}
-
-export async function requireAdminUser(): Promise<ServerSessionUser> {
-    const user = await getServerSessionUser();
-    if (!user) throw new Error("UNAUTHENTICATED");
-    if (!user.isAdmin) throw new Error("FORBIDDEN");
-    return user;
 }

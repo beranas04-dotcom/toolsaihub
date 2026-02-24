@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import {
     GoogleAuthProvider,
     signInWithRedirect,
@@ -9,15 +10,25 @@ import {
 import { auth } from "@/lib/firebaseClient";
 
 export default function AdminLoginPage() {
+    const searchParams = useSearchParams();
+    const nextUrl = searchParams.get("next") || "/admin"; // ✅ فين يمشي من بعد login
     const [loading, setLoading] = useState(false);
 
-    // ✅ after redirect, Firebase returns result هنا
     useEffect(() => {
         (async () => {
             try {
+                // ✅ إذا راه logged in من قبل، مشي مباشرة
+                const who = await fetch("/api/auth/whoami", { credentials: "include" })
+                    .then((r) => r.json())
+                    .catch(() => null);
+
+                if (who?.user?.admin) {
+                    window.location.href = "/admin";
+                    return;
+                }
+
                 const result = await getRedirectResult(auth);
 
-                // user جا من redirect
                 if (result?.user) {
                     const token = await result.user.getIdToken(true);
 
@@ -36,16 +47,16 @@ export default function AdminLoginPage() {
                         return;
                     }
 
-                    // ✅ full reload to admin
-                    window.location.href = "/admin";
+                    // ✅ مشي للصفحة المطلوبة مباشرة
+                    window.location.href = nextUrl;
                 }
             } catch (e) {
-                console.error("REDIRECT RESULT ERROR:", e);
+                console.error(e);
             } finally {
                 setLoading(false);
             }
         })();
-    }, []);
+    }, [nextUrl]);
 
     async function signIn() {
         try {
@@ -53,7 +64,7 @@ export default function AdminLoginPage() {
             const provider = new GoogleAuthProvider();
             await signInWithRedirect(auth, provider);
         } catch (e) {
-            console.error("REDIRECT LOGIN ERROR:", e);
+            console.error(e);
             alert("Login failed");
             setLoading(false);
         }
