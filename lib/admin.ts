@@ -1,6 +1,6 @@
 import type { User } from "@/types";
 
-const raw = process.env.NEXT_PUBLIC_ADMIN_EMAILS || process.env.ADMIN_EMAILS || "";
+const raw = process.env.NEXT_PUBLIC_ADMIN_EMAILS || "";
 
 const ADMIN_EMAILS = raw
     .split(",")

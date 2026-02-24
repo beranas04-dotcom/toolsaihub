@@ -1,26 +1,52 @@
+// app/api/auth/session/route.ts
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
+import { getAdminAuth } from "@/lib/firebaseAdmin";
 
 export const dynamic = "force-dynamic";
 
 const COOKIE_NAME = "aitoolshub_token";
+const EXPIRES_IN = 1000 * 60 * 60 * 24 * 7; // 7 days in ms
 
 export async function POST(req: Request) {
-    const { token } = (await req.json().catch(() => ({}))) as { token?: string };
+    try {
+        const body = (await req.json().catch(() => ({}))) as { token?: string };
+        const idToken = body?.token;
 
-    if (!token || typeof token !== "string") {
-        return NextResponse.json({ error: "Missing token" }, { status: 400 });
+        if (!idToken || typeof idToken !== "string") {
+            return NextResponse.json({ error: "Missing token" }, { status: 400 });
+        }
+
+        const adminAuth = getAdminAuth();
+
+        // ✅ Verify ID token first (ensures it's real)
+        const decoded = await adminAuth.verifyIdToken(idToken, true);
+
+        // ✅ Create secure session cookie
+        const sessionCookie = await adminAuth.createSessionCookie(idToken, {
+            expiresIn: EXPIRES_IN,
+        });
+
+        cookies().set(COOKIE_NAME, sessionCookie, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === "production",
+            sameSite: "lax",
+            path: "/",
+            maxAge: EXPIRES_IN / 1000, // seconds
+        });
+
+        return NextResponse.json({
+            ok: true,
+            uid: decoded.uid,
+            isAdmin: (decoded as any).admin === true,
+        });
+    } catch (e: any) {
+        console.error("SESSION_ERROR:", e?.message, e);
+        return NextResponse.json(
+            { error: "Invalid token", details: e?.message || "unknown" },
+            { status: 401 }
+        );
     }
-
-    cookies().set(COOKIE_NAME, token, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "lax",
-        path: "/",
-        maxAge: 60 * 60 * 24 * 7, // 7 days
-    });
-
-    return NextResponse.json({ ok: true });
 }
 
 export async function DELETE() {

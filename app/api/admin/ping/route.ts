@@ -1,10 +1,11 @@
 import { NextResponse } from "next/server";
-import { getServerSessionUser } from "@/lib/admin-session";
+import { requireAdmin } from "@/lib/adminAuth";
 
-export async function GET() {
-    const user = await getServerSessionUser();
-    if (!user?.isAdmin) {
+export async function GET(req: Request) {
+    try {
+        await requireAdmin(req);
+        return NextResponse.json({ ok: true });
+    } catch {
         return NextResponse.json({ ok: false }, { status: 401 });
     }
-    return NextResponse.json({ ok: true });
 }
