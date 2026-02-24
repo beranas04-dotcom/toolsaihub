@@ -1,49 +1,61 @@
 "use client";
 
-import { GoogleAuthProvider, signInWithPopup } from "firebase/auth";
+import { useEffect, useState } from "react";
+import {
+    GoogleAuthProvider,
+    signInWithRedirect,
+    getRedirectResult,
+} from "firebase/auth";
 import { auth } from "@/lib/firebaseClient";
 
 export default function AdminLoginPage() {
-    async function signInWithGoogle() {
-        console.log("CLICKED LOGIN"); // ✅ debug
+    const [loading, setLoading] = useState(false);
 
-        try {
-            const provider = new GoogleAuthProvider();
+    // ✅ after redirect, Firebase returns result هنا
+    useEffect(() => {
+        (async () => {
+            try {
+                const result = await getRedirectResult(auth);
 
-            const result = await signInWithPopup(auth, provider);
-            console.log("GOOGLE OK", result.user.email);
+                // user جا من redirect
+                if (result?.user) {
+                    const token = await result.user.getIdToken(true);
 
-            const token = await result.user.getIdToken(true);
-            console.log("TOKEN OK");
+                    const res = await fetch("/api/auth/session", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ token }),
+                        credentials: "include",
+                    });
 
-            // 🚨 IMPORTANT
-            console.log("CALLING SESSION API...");
+                    const data = await res.json().catch(() => ({}));
 
-            const res = await fetch("/api/auth/session", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({ token }),
-                credentials: "include",
-            });
+                    if (!res.ok) {
+                        console.error("SESSION ERROR:", data);
+                        alert("Session failed: " + (data?.error || "unknown"));
+                        return;
+                    }
 
-            console.log("SESSION STATUS:", res.status);
-
-            const data = await res.json();
-            console.log("SESSION DATA:", data);
-
-            if (!res.ok) {
-                alert("Session failed: " + data.error);
-                return;
+                    // ✅ full reload to admin
+                    window.location.href = "/admin";
+                }
+            } catch (e) {
+                console.error("REDIRECT RESULT ERROR:", e);
+            } finally {
+                setLoading(false);
             }
+        })();
+    }, []);
 
-            console.log("REDIRECTING...");
-            window.location.href = "/admin";
-
-        } catch (err) {
-            console.error("LOGIN ERROR:", err);
+    async function signIn() {
+        try {
+            setLoading(true);
+            const provider = new GoogleAuthProvider();
+            await signInWithRedirect(auth, provider);
+        } catch (e) {
+            console.error("REDIRECT LOGIN ERROR:", e);
             alert("Login failed");
+            setLoading(false);
         }
     }
 
@@ -52,10 +64,11 @@ export default function AdminLoginPage() {
             <h1 className="text-3xl font-bold mb-6">Admin Login</h1>
 
             <button
-                onClick={signInWithGoogle}
-                className="w-full bg-primary text-primary-foreground py-3 rounded-lg font-semibold"
+                onClick={signIn}
+                disabled={loading}
+                className="w-full bg-primary text-primary-foreground py-3 rounded-lg font-semibold disabled:opacity-60"
             >
-                Continue with Google
+                {loading ? "Loading..." : "Continue with Google"}
             </button>
         </main>
     );
