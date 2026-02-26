@@ -16,9 +16,7 @@ export default async function ProPage() {
                 <p className="text-muted-foreground mb-6">
                     Please sign in & subscribe to access Pro.
                 </p>
-                <Link className="underline" href="/pricing">
-                    Go to Pricing
-                </Link>
+                <Link className="underline" href="/pricing">Go to Pricing</Link>
             </main>
         );
     }
@@ -38,23 +36,14 @@ export default async function ProPage() {
             <main className="max-w-3xl mx-auto px-6 py-20">
                 <h1 className="text-3xl font-bold mb-2">Pro</h1>
                 <p className="text-muted-foreground mb-6">Session invalid.</p>
-                <Link className="underline" href="/pricing">
-                    Go to Pricing
-                </Link>
+                <Link className="underline" href="/pricing">Go to Pricing</Link>
             </main>
         );
     }
 
     const db = getAdminDb();
     const userDoc = await db.collection("users").doc(uid).get();
-    const data = userDoc.data() || {};
-
-    // ✅ support both shapes:
-    // - subscription.status (recommended)
-    // - plan/status (fallback)
-    const status =
-        data?.subscription?.status ||
-        (data?.plan === "pro" ? "active" : data?.status);
+    const status = userDoc.data()?.subscription?.status;
 
     if (status !== "active") {
         return (
@@ -63,9 +52,7 @@ export default async function ProPage() {
                 <p className="text-muted-foreground mb-6">
                     Your subscription is not active yet.
                 </p>
-                <Link className="underline" href="/pricing">
-                    Back to Pricing
-                </Link>
+                <Link className="underline" href="/pricing">Back to Pricing</Link>
             </main>
         );
     }

@@ -16,7 +16,7 @@ export default function PricingPage() {
             const result = await signInWithPopup(auth, provider);
             const idToken = await result.user.getIdToken(true);
 
-            // 2) Create USER session cookie (for /pro later)
+            // 2) Create USER session cookie (for /pro)
             const sRes = await fetch("/api/user/session", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -50,7 +50,7 @@ export default function PricingPage() {
 
     return (
         <main className="max-w-5xl mx-auto px-4 py-20">
-            {/* 🔥 JLADAN PRO SUBSCRIPTION */}
+            {/* JLADAN PRO SUBSCRIPTION */}
             <div className="border border-primary rounded-2xl p-8 mb-16 text-center">
                 <h2 className="text-3xl font-bold">JLADAN Pro 🔥</h2>
                 <p className="text-muted-foreground mt-2">
@@ -75,7 +75,7 @@ export default function PricingPage() {
                 </button>
             </div>
 
-            {/* OLD SECTION */}
+            {/* Promote your tool */}
             <h1 className="text-4xl font-bold mb-6 text-center">
                 Promote your AI Tool 🚀
             </h1>
