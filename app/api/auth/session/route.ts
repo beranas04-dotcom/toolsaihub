@@ -1,12 +1,19 @@
-// app/api/auth/session/route.ts
 import { NextResponse } from "next/server";
 import { getAdminAuth } from "@/lib/firebaseAdmin";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
-const COOKIE_NAME = "aitoolshub_token";
-const EXPIRES_IN = 60 * 60 * 24 * 7; // 7 days (seconds)
+const COOKIE_NAME = process.env.ADMIN_COOKIE_NAME || "aitoolshub_token";
+const EXPIRES_IN = 60 * 60 * 24 * 7; // 7 days
+
+function getAdminEmails(): string[] {
+    const raw = process.env.ADMIN_EMAILS || "";
+    return raw
+        .split(",")
+        .map((e) => e.trim().toLowerCase())
+        .filter(Boolean);
+}
 
 export async function POST(req: Request) {
     try {
@@ -18,34 +25,31 @@ export async function POST(req: Request) {
         }
 
         const adminAuth = getAdminAuth();
-
-        // 1) verify
         const decoded = await adminAuth.verifyIdToken(idToken, true);
 
-        // 2) allow only admin emails (security)
-        const email = (decoded as any).email?.toLowerCase();
-        const raw = process.env.NEXT_PUBLIC_ADMIN_EMAILS || "";
-        const admins = raw.split(",").map(e => e.trim().toLowerCase()).filter(Boolean);
+        const email = (decoded?.email || "").toLowerCase();
+        const admins = getAdminEmails();
 
-        if (!email || !admins.includes(email)) {
+        if (!email || (admins.length > 0 && !admins.includes(email))) {
             return NextResponse.json({ error: "Not allowed" }, { status: 403 });
         }
 
-        // 3) create session cookie
         const sessionCookie = await adminAuth.createSessionCookie(idToken, {
             expiresIn: EXPIRES_IN * 1000,
         });
 
-        // ✅ IMPORTANT: set cookie on the Response object
         const res = NextResponse.json({ ok: true });
+
         res.cookies.set(COOKIE_NAME, sessionCookie, {
             httpOnly: true,
-            secure: true, // vercel is https
+            secure: process.env.NODE_ENV === "production", // ✅ مهم
             sameSite: "lax",
             path: "/",
             maxAge: EXPIRES_IN,
         });
 
+        // helpful header (debug)
+        res.headers.set("x-set-cookie", "1");
         return res;
     } catch (e: any) {
         console.error("SESSION_ERROR:", e?.message, e);
@@ -60,7 +64,7 @@ export async function DELETE() {
     const res = NextResponse.json({ ok: true });
     res.cookies.set(COOKIE_NAME, "", {
         httpOnly: true,
-        secure: true,
+        secure: process.env.NODE_ENV === "production",
         sameSite: "lax",
         path: "/",
         maxAge: 0,

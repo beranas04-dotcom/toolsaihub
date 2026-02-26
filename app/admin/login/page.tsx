@@ -2,11 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import {
-    GoogleAuthProvider,
-    signInWithRedirect,
-    getRedirectResult,
-} from "firebase/auth";
+import { GoogleAuthProvider, signInWithPopup } from "firebase/auth";
 import { auth } from "@/lib/firebaseClient";
 
 export default function AdminLoginPage() {
@@ -16,56 +12,47 @@ export default function AdminLoginPage() {
 
     useEffect(() => {
         (async () => {
-            try {
-                // ✅ إذا راه logged in من قبل، مشي مباشرة
-                const who = await fetch("/api/auth/whoami", { credentials: "include" })
-                    .then((r) => r.json())
-                    .catch(() => null);
+            const who = await fetch("/api/auth/whoami", { credentials: "include" })
+                .then((r) => r.json())
+                .catch(() => null);
 
-                if (who?.user?.admin) {
-                    window.location.href = "/admin";
-                    return;
-                }
-
-                const result = await getRedirectResult(auth);
-
-                if (result?.user) {
-                    const token = await result.user.getIdToken(true);
-
-                    const res = await fetch("/api/auth/session", {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ token }),
-                        credentials: "include",
-                    });
-
-                    const data = await res.json().catch(() => ({}));
-
-                    if (!res.ok) {
-                        console.error("SESSION ERROR:", data);
-                        alert("Session failed: " + (data?.error || "unknown"));
-                        return;
-                    }
-
-                    // ✅ مشي للصفحة المطلوبة مباشرة
-                    window.location.href = nextUrl;
-                }
-            } catch (e) {
-                console.error(e);
-            } finally {
-                setLoading(false);
+            if (who?.user?.admin) {
+                window.location.href = "/admin";
+                return;
             }
+
+            setLoading(false);
         })();
-    }, [nextUrl]);
+    }, []);
 
     async function signIn() {
         try {
             setLoading(true);
             const provider = new GoogleAuthProvider();
-            await signInWithRedirect(auth, provider);
+            const result = await signInWithPopup(auth, provider);
+
+            const token = await result.user.getIdToken(true);
+
+            const res = await fetch("/api/auth/session", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ token }),
+                credentials: "include",
+            });
+
+            const data = await res.json().catch(() => ({}));
+
+            if (!res.ok) {
+                console.error("SESSION ERROR:", data);
+                alert("Session failed: " + (data?.error || "unknown"));
+                return;
+            }
+
+            window.location.href = nextUrl;
         } catch (e) {
             console.error(e);
             alert("Login failed");
+        } finally {
             setLoading(false);
         }
     }

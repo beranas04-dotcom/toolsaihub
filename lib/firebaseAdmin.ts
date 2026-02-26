@@ -77,3 +77,4 @@ export function getDb() {
  */
 export const adminApp = getAdminApp();
 export const adminDb = getAdminDb();
+export const adminAuth = getAdminAuth();
