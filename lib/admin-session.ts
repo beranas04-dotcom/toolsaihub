@@ -32,18 +32,19 @@ function isEmailAdmin(email: string | null): boolean {
 
 /**
  * تستعملها فـ routes/admin باش تفرض admin access.
- * كتتحقق من cookie: aitoolshub_token
+ * كتتحقق من cookie: aitoolshub_token (ولا ADMIN_COOKIE_NAME)
  */
 export async function requireAdminUser(): Promise<AdminUser> {
-    const session = (await cookies()).get(COOKIE_NAME)?.value;
+    const session = cookies().get(COOKIE_NAME)?.value;
     if (!session) throw new Error("UNAUTHORIZED_ADMIN");
 
-    // IMPORTANT: حنا كنفضلو Session Cookie
     let decoded: any;
+
+    // Prefer session cookie
     try {
         decoded = await adminAuth.verifySessionCookie(session, true);
     } catch {
-        // fallback إذا كنت كتخزن idToken بدل session cookie (غير احتياط)
+        // Fallback: in case you stored an idToken instead (not recommended, but ok as fallback)
         try {
             decoded = await adminAuth.verifyIdToken(session);
         } catch {
@@ -65,7 +66,7 @@ export async function requireAdminUser(): Promise<AdminUser> {
  */
 export async function getServerSessionUser(): Promise<SessionUser | null> {
     try {
-        const sessionCookie = (await cookies()).get(COOKIE_NAME)?.value;
+        const sessionCookie = cookies().get(COOKIE_NAME)?.value;
         if (!sessionCookie) return null;
 
         const decoded: any = await adminAuth.verifySessionCookie(sessionCookie, true);
