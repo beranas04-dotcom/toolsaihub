@@ -28,9 +28,8 @@ export async function POST(req: Request) {
         }
 
         const event = JSON.parse(body);
-        const eventName = event?.meta?.event_name;
+        const eventName = event?.meta?.event_name || "unknown";
 
-        // حاول نجيب email من كثر من path باش ما نطيحوش فـ اختلافات
         const email =
             safeLower(event?.data?.attributes?.user_email) ||
             safeLower(event?.data?.attributes?.customer_email) ||
@@ -42,7 +41,7 @@ export async function POST(req: Request) {
             return NextResponse.json({ ok: true, note: "No email in payload" });
         }
 
-        // ✅ نجيبو آخر checkoutSessions لنفس email (باش نلقاو uid)
+        // ✅ find latest checkoutSession for this email (needs index)
         const snap = await adminDb
             .collection("checkoutSessions")
             .where("email", "==", email)
@@ -55,7 +54,8 @@ export async function POST(req: Request) {
             return NextResponse.json({ ok: true, note: "No checkout session match" });
         }
 
-        const session = snap.docs[0].data();
+        const sessionDoc = snap.docs[0];
+        const session = sessionDoc.data();
         const uid = session?.uid as string | undefined;
 
         if (!uid) {
@@ -63,41 +63,60 @@ export async function POST(req: Request) {
             return NextResponse.json({ ok: true, note: "Missing uid" });
         }
 
-        // ✅ أحداث الاشتراك
-        if (eventName === "subscription_created" || eventName === "subscription_payment_success") {
+        // ✅ events
+        const activateEvents = new Set([
+            "subscription_created",
+            "subscription_payment_success",
+            "subscription_updated",
+            "subscription_resumed",
+        ]);
+
+        const deactivateEvents = new Set([
+            "subscription_cancelled",
+            "subscription_expired",
+            "subscription_payment_failed",
+            "subscription_paused",
+        ]);
+
+        if (activateEvents.has(eventName)) {
             await adminDb.collection("users").doc(uid).set(
                 {
                     email,
                     subscription: {
                         provider: "lemon",
+                        plan: "pro",
                         status: "active",
                         updatedAt: Date.now(),
-                        // optional raw info
                         lemonEvent: eventName,
                     },
                 },
                 { merge: true }
             );
 
-            // optional: update session status
-            await snap.docs[0].ref.set({ status: "paid", paidAt: Date.now() }, { merge: true });
+            // ✅ mark session paid (clean tracking)
+            await sessionDoc.ref.set(
+                { status: "paid", paidAt: Date.now(), lastEvent: eventName },
+                { merge: true }
+            );
         }
 
-        if (
-            eventName === "subscription_cancelled" ||
-            eventName === "subscription_expired" ||
-            eventName === "subscription_payment_failed"
-        ) {
+        if (deactivateEvents.has(eventName)) {
             await adminDb.collection("users").doc(uid).set(
                 {
                     email,
                     subscription: {
                         provider: "lemon",
+                        plan: "pro",
                         status: "inactive",
                         updatedAt: Date.now(),
                         lemonEvent: eventName,
                     },
                 },
+                { merge: true }
+            );
+
+            await sessionDoc.ref.set(
+                { status: "inactive", updatedAt: Date.now(), lastEvent: eventName },
                 { merge: true }
             );
         }
