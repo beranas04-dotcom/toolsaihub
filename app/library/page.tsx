@@ -1,9 +1,19 @@
 import { cookies } from "next/headers";
 import Link from "next/link";
 import { getAdminAuth, getAdminDb } from "@/lib/firebaseAdmin";
+import DownloadButton from "@/components/DownloadButton";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+
+type Product = {
+    id: string;
+    title: string;
+    description?: string;
+    tier?: "free" | "pro";
+    fileUrl?: string;
+    createdAt?: number;
+};
 
 export default async function LibraryPage() {
     const cookieName = process.env.USER_COOKIE_NAME || "__user_session";
@@ -24,7 +34,6 @@ export default async function LibraryPage() {
     }
 
     const adminAuth = getAdminAuth();
-
     let uid: string | null = null;
 
     try {
@@ -64,50 +73,39 @@ export default async function LibraryPage() {
         );
     }
 
-    // ✅ PRO CONTENT
+    const snap = await db.collection("products").orderBy("createdAt", "desc").get();
+    const products: Product[] = snap.docs.map((d) => ({ id: d.id, ...(d.data() as any) }));
+
     return (
         <main className="max-w-6xl mx-auto px-6 py-20">
-            <h1 className="text-4xl font-bold mb-6">🔥 JLADAN Library</h1>
-
+            <h1 className="text-4xl font-bold mb-2">🔥 JLADAN Library</h1>
             <p className="text-muted-foreground mb-10">
                 Exclusive AI prompts & templates for Pro users
             </p>
 
             <div className="grid md:grid-cols-3 gap-6">
+                {products.map((p) => (
+                    <div key={p.id} className="border rounded-xl p-6">
+                        <h2 className="font-bold text-lg">{p.title}</h2>
+                        <p className="text-sm text-muted-foreground mt-2">
+                            {p.description || "Premium resource"}
+                        </p>
 
-                {/* PRODUCT 1 */}
-                <div className="border rounded-xl p-6">
-                    <h2 className="font-bold text-lg">50 Viral TikTok Hooks</h2>
-                    <p className="text-sm text-muted-foreground mt-2">
-                        Copy-paste hooks to go viral
-                    </p>
-                    <button className="mt-4 w-full bg-primary text-white py-2 rounded-lg">
-                        Download
-                    </button>
-                </div>
-
-                {/* PRODUCT 2 */}
-                <div className="border rounded-xl p-6">
-                    <h2 className="font-bold text-lg">100 AI Image Prompts</h2>
-                    <p className="text-sm text-muted-foreground mt-2">
-                        Midjourney & Leonardo prompts
-                    </p>
-                    <button className="mt-4 w-full bg-primary text-white py-2 rounded-lg">
-                        Download
-                    </button>
-                </div>
-
-                {/* PRODUCT 3 */}
-                <div className="border rounded-xl p-6">
-                    <h2 className="font-bold text-lg">YouTube Automation Kit</h2>
-                    <p className="text-sm text-muted-foreground mt-2">
-                        Scripts + ideas + strategy
-                    </p>
-                    <button className="mt-4 w-full bg-primary text-white py-2 rounded-lg">
-                        Download
-                    </button>
-                </div>
-
+                        {p.fileUrl ? (
+                            <DownloadButton
+                                url={p.fileUrl}
+                                className="mt-4 inline-block w-full text-center bg-primary text-white py-2 rounded-lg"
+                            />
+                        ) : (
+                            <button
+                                disabled
+                                className="mt-4 w-full bg-muted text-muted-foreground py-2 rounded-lg"
+                            >
+                                Coming soon
+                            </button>
+                        )}
+                    </div>
+                ))}
             </div>
         </main>
     );
