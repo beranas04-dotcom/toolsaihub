@@ -3,16 +3,13 @@
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
-
-import HeaderSearch from "@/components/search/HeaderSearch";
 import { useAuth } from "@/components/providers/AuthProvider";
 import { useTheme } from "@/components/providers/ThemeProvider";
 import { siteMetadata } from "@/lib/siteMetadata";
-
 import { signOut as firebaseSignOut } from "firebase/auth";
 import { auth } from "@/lib/firebaseClient";
-
+import { useState } from "react";
+import HeaderSearch from "@/components/search/HeaderSearch";
 import {
     MoonIcon,
     SunIcon,
@@ -22,7 +19,7 @@ import {
 } from "@heroicons/react/24/outline";
 
 function Header() {
-    const { user, signOut } = useAuth(); // signOut dyal AuthProvider
+    const { user, signOut: appSignOut } = useAuth();
     const { theme, toggleTheme } = useTheme();
     const router = useRouter();
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -36,34 +33,32 @@ function Header() {
         { name: "Submit Tool", href: "/submit" },
     ];
 
-    // ✅ Logout قوي: كيمسح session cookie + كيدير signout firebase + كيريفريش السيرفر
-    async function fullLogout() {
-        try {
-            // 1) server cookie delete (حسب endpoints اللي عندك)
-            // كنخلي بجوج باش ما نخسروش شي واحد فيهم خدام عندك
-            await fetch("/api/auth/logout", { method: "POST" }).catch(() => null);
-            await fetch("/api/auth/session", { method: "DELETE" }).catch(() => null);
+    async function handleLogoutToPricing() {
+        // 1) Delete server session cookie
+        await fetch("/api/auth/logout", { method: "POST" }).catch(() => { });
 
-            // 2) firebase logout (client)
-            // كنخلي حتى signOut ديال provider إذا كانت كتدير شي logic إضافي
-            try {
-                await signOut?.();
-            } catch {
-                // ignore
-            }
-            await firebaseSignOut(auth);
+        // 2) Firebase sign out (client)
+        await firebaseSignOut(auth).catch(() => { });
 
-        } finally {
-            // 3) redirect + hard refresh باش server components يقرا cookie الجديدة
-            window.location.href = "/pricing";
-        }
+        // 3) Force refresh
+        window.location.href = "/pricing";
     }
 
     async function handleSignOut() {
         try {
-            await fullLogout();
-        } catch {
-            // fullLogout already redirects
+            // 1) App sign out (from AuthProvider)
+            await appSignOut?.();
+
+            // 2) Delete admin/session cookie endpoint (if you use it)
+            await fetch("/api/auth/session", { method: "DELETE" }).catch(() => { });
+        } finally {
+            // Redirect based on role
+            if (user?.isAdmin) {
+                router.replace("/admin/login");
+            } else {
+                router.replace("/auth/signin");
+            }
+            router.refresh();
         }
     }
 
@@ -159,11 +154,9 @@ function Header() {
                                             My Reviews
                                         </Link>
 
-                                        {/* Admin links */}
                                         {user.isAdmin && (
                                             <>
                                                 <div className="my-1 border-t border-border" />
-
                                                 <Link
                                                     href="/admin"
                                                     className="block px-4 py-2 text-sm hover:bg-accent transition-colors"
@@ -206,12 +199,11 @@ function Header() {
                                             Sign Out
                                         </button>
 
-                                        {/* كنخليه كيفما كان عندك */}
                                         <button
-                                            onClick={fullLogout}
+                                            onClick={handleLogoutToPricing}
                                             className="block w-full text-left px-4 py-2 text-sm hover:bg-accent transition-colors"
                                         >
-                                            Logout
+                                            Logout (Pricing)
                                         </button>
                                     </div>
                                 </div>
