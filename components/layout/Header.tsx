@@ -6,8 +6,6 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/components/providers/AuthProvider";
 import { useTheme } from "@/components/providers/ThemeProvider";
 import { siteMetadata } from "@/lib/siteMetadata";
-import { signOut as firebaseSignOut } from "firebase/auth";
-import { auth } from "@/lib/firebaseClient";
 import { useState } from "react";
 import HeaderSearch from "@/components/search/HeaderSearch";
 import {
@@ -19,7 +17,7 @@ import {
 } from "@heroicons/react/24/outline";
 
 function Header() {
-    const { user, signOut: appSignOut } = useAuth();
+    const { user, signOut: authSignOut } = useAuth(); // ✅ rename باش ما يكونش shadowing
     const { theme, toggleTheme } = useTheme();
     const router = useRouter();
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -33,31 +31,16 @@ function Header() {
         { name: "Submit Tool", href: "/submit" },
     ];
 
-    async function handleLogoutToPricing() {
-        // 1) Delete server session cookie
-        await fetch("/api/auth/logout", { method: "POST" }).catch(() => { });
-
-        // 2) Firebase sign out (client)
-        await firebaseSignOut(auth).catch(() => { });
-
-        // 3) Force refresh
-        window.location.href = "/pricing";
-    }
-
-    async function handleSignOut() {
+    async function handleLogout() {
         try {
-            // 1) App sign out (from AuthProvider)
-            await appSignOut?.();
+            // 1) Firebase sign out (client)
+            await authSignOut();
 
-            // 2) Delete admin/session cookie endpoint (if you use it)
-            await fetch("/api/auth/session", { method: "DELETE" }).catch(() => { });
+            // 2) Delete cookies (server) ✅ user + admin
+            await fetch("/api/auth/logout", { method: "POST" });
         } finally {
-            // Redirect based on role
-            if (user?.isAdmin) {
-                router.replace("/admin/login");
-            } else {
-                router.replace("/auth/signin");
-            }
+            // 3) redirect + refresh server components
+            router.replace("/pricing");
             router.refresh();
         }
     }
@@ -133,7 +116,7 @@ function Header() {
                                     )}
                                 </button>
 
-                                {/* Dropdown menu */}
+                                {/* Dropdown */}
                                 <div className="absolute right-0 mt-2 w-64 rounded-md shadow-lg bg-popover border border-border opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all">
                                     <div className="py-1">
                                         <div className="px-4 py-2 text-sm text-muted-foreground border-b border-border">
@@ -193,17 +176,10 @@ function Header() {
                                         <div className="my-1 border-t border-border" />
 
                                         <button
-                                            onClick={handleSignOut}
+                                            onClick={handleLogout}
                                             className="block w-full text-left px-4 py-2 text-sm hover:bg-accent transition-colors"
                                         >
                                             Sign Out
-                                        </button>
-
-                                        <button
-                                            onClick={handleLogoutToPricing}
-                                            className="block w-full text-left px-4 py-2 text-sm hover:bg-accent transition-colors"
-                                        >
-                                            Logout (Pricing)
                                         </button>
                                     </div>
                                 </div>
@@ -217,7 +193,7 @@ function Header() {
                             </Link>
                         )}
 
-                        {/* Mobile menu button */}
+                        {/* Mobile button */}
                         <button
                             type="button"
                             className="md:hidden p-2 text-muted-foreground hover:text-foreground transition-colors"
@@ -252,6 +228,7 @@ function Header() {
                                     {item.name}
                                 </Link>
                             ))}
+
                             {!user && (
                                 <Link
                                     href="/auth/signin"
