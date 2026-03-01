@@ -1,28 +1,58 @@
+"use client";
+
 import Link from "next/link";
-import { Metadata } from "next";
+import { useEffect, useState } from "react";
 
-export const metadata: Metadata = {
-    title: "Welcome to JLADAN Pro",
-    description: "Your subscription is being activated. Access your Pro Library now.",
-    robots: { index: false, follow: false },
-};
+type StatusResp = { ok: boolean; status: string };
 
-async function getSubStatus() {
+async function fetchStatus(): Promise<StatusResp> {
     try {
-        // ✅ IMPORTANT: use relative URL so cookies are included on the server
         const res = await fetch("/api/subscription/status", { cache: "no-store" });
-
-        if (!res.ok) return { ok: false, status: "none" as const };
-        const data = (await res.json()) as { ok: boolean; status: string };
-        return data;
+        if (!res.ok) return { ok: false, status: "none" };
+        return (await res.json()) as StatusResp;
     } catch {
-        return { ok: false, status: "none" as const };
+        return { ok: false, status: "none" };
     }
 }
 
-export default async function ThanksPage() {
-    const data = await getSubStatus();
-    const isActive = data?.status === "active";
+export default function ThanksPage() {
+    const [status, setStatus] = useState<string>("activating");
+    const [loading, setLoading] = useState(false);
+
+    // Auto-poll for up to ~30s
+    useEffect(() => {
+        let tries = 0;
+        let stopped = false;
+
+        async function tick() {
+            const data = await fetchStatus();
+            if (stopped) return;
+
+            if (data?.status) setStatus(data.status);
+
+            // Stop polling if active or after 10 tries (≈ 30s)
+            tries += 1;
+            if (data.status === "active" || tries >= 10) return;
+
+            setTimeout(tick, 3000);
+        }
+
+        tick();
+        return () => {
+            stopped = true;
+        };
+    }, []);
+
+    const isActive = status === "active";
+    const isInactive = status === "inactive";
+    const isNone = status === "none";
+
+    async function manualRefresh() {
+        setLoading(true);
+        const data = await fetchStatus();
+        setStatus(data.status || "none");
+        setLoading(false);
+    }
 
     return (
         <main className="max-w-3xl mx-auto px-4 py-20">
@@ -36,21 +66,34 @@ export default async function ThanksPage() {
                 </h1>
 
                 <p className="mt-4 text-base md:text-lg text-muted-foreground">
-                    Your checkout is complete. Your Pro access should activate in a few seconds.
+                    Your checkout is complete. Your Pro access should activate shortly.
                 </p>
 
+                {/* Status pill */}
                 <div className="mt-6 inline-flex items-center gap-2 rounded-full border border-border px-4 py-2 text-sm">
                     <span
                         className={[
                             "h-2 w-2 rounded-full",
-                            isActive ? "bg-green-500" : "bg-yellow-500",
+                            isActive ? "bg-green-500" : isInactive || isNone ? "bg-red-500" : "bg-yellow-500",
                         ].join(" ")}
                     />
                     <span className="text-muted-foreground">
-                        {isActive
-                            ? "Status: Active"
-                            : "Status: Activating… (refresh in 10–20 seconds)"}
+                        {isActive && "Status: Active ✅"}
+                        {!isActive && !isInactive && !isNone && "Status: Activating… (auto-checking)"}
+                        {isInactive && "Status: Inactive"}
+                        {isNone && "Status: Not detected (try signing in again)"}
                     </span>
+                </div>
+
+                {/* Manual refresh */}
+                <div className="mt-4">
+                    <button
+                        onClick={manualRefresh}
+                        disabled={loading}
+                        className="text-sm underline text-muted-foreground hover:text-foreground disabled:opacity-60"
+                    >
+                        {loading ? "Checking..." : "Refresh status"}
+                    </button>
                 </div>
 
                 <div className="mt-10 flex flex-col sm:flex-row gap-3 justify-center">
@@ -82,13 +125,13 @@ export default async function ThanksPage() {
                     <h2 className="text-lg font-bold">What to do next</h2>
                     <ul className="mt-3 space-y-2 text-sm text-muted-foreground">
                         <li>• Open the Library and download your first Pro kit/template.</li>
-                        <li>• If access is still “Activating…”, refresh in 10–20 seconds.</li>
-                        <li>• Need help? Contact support from the site footer.</li>
+                        <li>• If status takes time, click “Refresh status”.</li>
+                        <li>• Need help? Contact support from the footer.</li>
                     </ul>
                 </div>
 
                 <p className="mt-8 text-xs text-muted-foreground">
-                    If you have issues, try logging out and signing in again to refresh your session.
+                    Tip: Make sure you’re logged in with the same Google account used at checkout.
                 </p>
             </section>
         </main>
