@@ -1,8 +1,9 @@
 "use client";
 
+import Link from "next/link";
 import { GoogleAuthProvider, signInWithPopup } from "firebase/auth";
 import { auth } from "@/lib/firebaseClient";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 
 type FaqItem = { q: string; a: string };
 
@@ -18,7 +19,7 @@ export default function PricingPage() {
             const result = await signInWithPopup(auth, provider);
             const idToken = await result.user.getIdToken(true);
 
-            // 2) Create USER session cookie (for /pro)
+            // 2) Create USER session cookie (for /pro + /library)
             const sRes = await fetch("/api/user/session", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -39,8 +40,9 @@ export default function PricingPage() {
 
             const data = await res.json().catch(() => ({}));
             if (!res.ok) throw new Error(data?.error || "Failed to start checkout");
+            if (!data?.url) throw new Error("Missing checkout URL");
 
-            // 4) redirect to Lemon checkout
+            // 4) Redirect to Lemon checkout
             window.location.href = data.url;
         } catch (e: any) {
             console.error(e);
@@ -50,35 +52,32 @@ export default function PricingPage() {
         }
     }
 
-    const faqs: FaqItem[] = useMemo(
-        () => [
-            {
-                q: "What exactly do I get with JLADAN Pro?",
-                a: "Full access to the Pro Library (prompts + templates + kits), all Pro products, and regular new drops and updates.",
-            },
-            {
-                q: "Can I cancel anytime?",
-                a: "Yes. You can cancel anytime from the Lemon Squeezy customer portal. Your access remains active until the end of the current billing period.",
-            },
-            {
-                q: "Where do I access the products after I pay?",
-                a: "After checkout, you’ll be redirected to /thanks with buttons to go to your Library. If your subscription is active, everything is unlocked.",
-            },
-            {
-                q: "Do you offer refunds?",
-                a: "If you’re not satisfied, you can request a refund within the first 7 days (case-by-case). We want you to be 100% happy.",
-            },
-            {
-                q: "Are downloads fully protected?",
-                a: "For the MVP, downloads open a file link to keep onboarding fast. Later we’ll add a professional protected download flow (API route + temporary links).",
-            },
-            {
-                q: "Can I request content or get support?",
-                a: "Yes. You can suggest content or request a kit/template and we’ll consider it for upcoming drops.",
-            },
-        ],
-        []
-    );
+    const faqs: FaqItem[] = [
+        {
+            q: "What exactly do I get with JLADAN Pro?",
+            a: "Full access to the Pro Library (prompts + templates + kits), all Pro products, and regular new drops and updates.",
+        },
+        {
+            q: "Can I cancel anytime?",
+            a: "Yes. You can cancel anytime from the Lemon Squeezy customer portal. Your access remains active until the end of the current billing period.",
+        },
+        {
+            q: "Where do I access the products after I pay?",
+            a: "After checkout, you’ll be redirected to /thanks with buttons to go to your Library. If your subscription is active, everything is unlocked.",
+        },
+        {
+            q: "Do you offer refunds?",
+            a: "If you’re not satisfied, you can request a refund within the first 7 days (case-by-case). We want you to be 100% happy.",
+        },
+        {
+            q: "Are downloads fully protected?",
+            a: "For the MVP, downloads open a file link to keep onboarding fast. Later we’ll add a professional protected download flow (API route + temporary links).",
+        },
+        {
+            q: "Can I request content or get support?",
+            a: "Yes. You can suggest content or request a kit/template and we’ll consider it for upcoming drops.",
+        },
+    ];
 
     return (
         <main className="max-w-6xl mx-auto px-4 py-16 md:py-20">
@@ -107,12 +106,12 @@ export default function PricingPage() {
                         {loading ? "Redirecting..." : "Get JLADAN Pro — $5/mo"}
                     </button>
 
-                    <a
-                        href="/library"
+                    <Link
+                        href="/products"
                         className="rounded-xl border border-border px-6 py-3 font-semibold hover:bg-muted text-center"
                     >
-                        Preview the Library
-                    </a>
+                        Browse products
+                    </Link>
                 </div>
 
                 <div className="mt-6 flex flex-wrap justify-center gap-x-4 gap-y-2 text-xs text-muted-foreground">
@@ -133,30 +132,12 @@ export default function PricingPage() {
                     </p>
 
                     <div className="mt-6 grid md:grid-cols-2 gap-4">
-                        <Feature
-                            title="Full Pro Library Access"
-                            desc="Unlock prompts, templates, and kits."
-                        />
-                        <Feature
-                            title="Ready-to-use Products"
-                            desc="Downloadable files you can use instantly."
-                        />
-                        <Feature
-                            title="New Drops"
-                            desc="Fresh content added regularly (weekly/monthly)."
-                        />
-                        <Feature
-                            title="Updates & Improvements"
-                            desc="Ongoing updates to keep everything high-quality."
-                        />
-                        <Feature
-                            title="Request Content"
-                            desc="Suggest content and we’ll prioritize popular requests."
-                        />
-                        <Feature
-                            title="Simple, Practical, No Fluff"
-                            desc="Built for results, not theory."
-                        />
+                        <Feature title="Full Pro Library Access" desc="Unlock prompts, templates, and kits." />
+                        <Feature title="Ready-to-use Products" desc="Downloadable files you can use instantly." />
+                        <Feature title="New Drops" desc="Fresh content added regularly (weekly/monthly)." />
+                        <Feature title="Updates & Improvements" desc="Ongoing updates to keep everything high-quality." />
+                        <Feature title="Request Content" desc="Suggest content and we’ll prioritize popular requests." />
+                        <Feature title="Simple, Practical, No Fluff" desc="Built for results, not theory." />
                     </div>
 
                     <div className="mt-8 rounded-xl bg-muted/50 border border-border p-5">
@@ -175,9 +156,7 @@ export default function PricingPage() {
                     <div className="flex items-start justify-between gap-3">
                         <div>
                             <h2 className="text-xl font-bold">JLADAN Pro</h2>
-                            <p className="text-sm text-muted-foreground mt-1">
-                                Full access + new drops
-                            </p>
+                            <p className="text-sm text-muted-foreground mt-1">Full access + new drops</p>
                         </div>
                         <span className="text-xs rounded-full bg-primary/10 text-primary border border-primary/20 px-2 py-1">
                             Most popular
@@ -195,18 +174,10 @@ export default function PricingPage() {
                     </div>
 
                     <ul className="mt-6 space-y-3 text-sm">
-                        <li className="flex gap-2">
-                            <span>✅</span> Unlock /pro + /library + Pro products
-                        </li>
-                        <li className="flex gap-2">
-                            <span>✅</span> Download premium files
-                        </li>
-                        <li className="flex gap-2">
-                            <span>✅</span> New drops regularly
-                        </li>
-                        <li className="flex gap-2">
-                            <span>✅</span> Cancel anytime
-                        </li>
+                        <li className="flex gap-2"><span>✅</span> Unlock /pro + /library + Pro products</li>
+                        <li className="flex gap-2"><span>✅</span> Download premium files</li>
+                        <li className="flex gap-2"><span>✅</span> New drops regularly</li>
+                        <li className="flex gap-2"><span>✅</span> Cancel anytime</li>
                     </ul>
 
                     <button
@@ -219,13 +190,13 @@ export default function PricingPage() {
 
                     <p className="mt-4 text-xs text-muted-foreground">
                         By subscribing, you agree to our{" "}
-                        <a className="underline hover:text-foreground" href="/terms">
+                        <Link className="underline hover:text-foreground" href="/terms">
                             Terms
-                        </a>{" "}
+                        </Link>{" "}
                         and{" "}
-                        <a className="underline hover:text-foreground" href="/privacy">
+                        <Link className="underline hover:text-foreground" href="/privacy">
                             Privacy Policy
-                        </a>
+                        </Link>
                         .
                     </p>
 
@@ -247,15 +218,10 @@ export default function PricingPage() {
 
                 <div className="mt-8 grid gap-4">
                     {faqs.map((item, idx) => (
-                        <details
-                            key={idx}
-                            className="group rounded-xl border border-border p-5 open:bg-muted/30"
-                        >
+                        <details key={idx} className="group rounded-xl border border-border p-5 open:bg-muted/30">
                             <summary className="cursor-pointer list-none font-semibold flex items-center justify-between">
                                 <span>{item.q}</span>
-                                <span className="ml-4 text-muted-foreground group-open:rotate-45 transition-transform">
-                                    +
-                                </span>
+                                <span className="ml-4 text-muted-foreground group-open:rotate-45 transition-transform">+</span>
                             </summary>
                             <p className="mt-3 text-sm text-muted-foreground">{item.a}</p>
                         </details>
@@ -332,12 +298,7 @@ function PlanCard({
     highlight?: boolean;
 }) {
     return (
-        <div
-            className={[
-                "rounded-2xl border p-6",
-                highlight ? "border-primary/60" : "border-border",
-            ].join(" ")}
-        >
+        <div className={["rounded-2xl border p-6", highlight ? "border-primary/60" : "border-border"].join(" ")}>
             <h3 className="text-xl font-bold">{title}</h3>
             <p className="text-sm text-muted-foreground mt-2">{desc}</p>
             <p className="mt-4 text-3xl font-extrabold">{price}</p>
