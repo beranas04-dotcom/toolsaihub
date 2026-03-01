@@ -31,7 +31,7 @@ export default function PricingPage() {
                 throw new Error(err?.error || "Failed to create user session");
             }
 
-            // 3) Create checkout session
+            // 3) Create Lemon checkout session
             const res = await fetch("/api/lemon/start", {
                 method: "POST",
                 headers: { Authorization: `Bearer ${idToken}` },
@@ -44,7 +44,7 @@ export default function PricingPage() {
             window.location.href = data.url;
         } catch (e: any) {
             console.error(e);
-            alert(e?.message || "Error");
+            alert(e?.message || "Something went wrong");
         } finally {
             setLoading(false);
         }
@@ -53,28 +53,28 @@ export default function PricingPage() {
     const faqs: FaqItem[] = useMemo(
         () => [
             {
-                q: "شنو كنستافد من JLADAN Pro بالضبط؟",
-                a: "كتاخد وصول كامل لـ Library (Prompts + Templates + Kits) + منتجات Pro كاملة + تحديثات وإضافات جديدة بشكل منتظم.",
+                q: "What exactly do I get with JLADAN Pro?",
+                a: "Full access to the Pro Library (prompts + templates + kits), all Pro products, and regular new drops and updates.",
             },
             {
-                q: "واش نقدر نلغي فـ أي وقت؟",
-                a: "نعم. تقدر تلغي فـ أي وقت من Portal ديال Lemon Squeezy، وكيتوقف التجديد تلقائياً فـ نهاية الدورة الحالية.",
+                q: "Can I cancel anytime?",
+                a: "Yes. You can cancel anytime from the Lemon Squeezy customer portal. Your access remains active until the end of the current billing period.",
             },
             {
-                q: "فين غادي نلقى المنتجات من بعد ما نخلّص؟",
-                a: "من بعد الدفع كترجع لصفحة /thanks ومن تما زر كيديك مباشرة لـ /library. وإذا كنت Pro، كلشي كيبان unlocked.",
+                q: "Where do I access the products after I pay?",
+                a: "After checkout, you’ll be redirected to /thanks with buttons to go to your Library. If your subscription is active, everything is unlocked.",
             },
             {
-                q: "واش كاين Refund؟",
-                a: "إلا ماعجبكش المحتوى، تقدر تطلب refund فـ أول 7 أيام (إلا كان ممكن حسب الحالة). هدفنا تبقى راضي 100%.",
+                q: "Do you offer refunds?",
+                a: "If you’re not satisfied, you can request a refund within the first 7 days (case-by-case). We want you to be 100% happy.",
             },
             {
-                q: "واش التحميل محمي 100%؟",
-                a: "دابا فـ MVP التحميل كيحل روابط (باش نوصلو لأول sale بسرعة). من بعد كنزيدو حماية احترافية بتحميل عبر API + links مؤقتة.",
+                q: "Are downloads fully protected?",
+                a: "For the MVP, downloads open a file link to keep onboarding fast. Later we’ll add a professional protected download flow (API route + temporary links).",
             },
             {
-                q: "واش كاين Support ولا نقدر نطلب محتوى؟",
-                a: "نعم. تقدر تقترح محتوى ولا تطلب template/kit، وغادي ناخدو الاقتراحات بعين الاعتبار فـ drops الجاية.",
+                q: "Can I request content or get support?",
+                a: "Yes. You can suggest content or request a kit/template and we’ll consider it for upcoming drops.",
             },
         ],
         []
@@ -86,16 +86,16 @@ export default function PricingPage() {
             <section className="text-center max-w-3xl mx-auto">
                 <div className="inline-flex items-center gap-2 rounded-full border border-border px-3 py-1 text-xs text-muted-foreground">
                     <span className="h-2 w-2 rounded-full bg-green-500" />
-                    New drops + premium library for creators & marketers
+                    Premium library for creators & marketers
                 </div>
 
                 <h1 className="mt-6 text-4xl md:text-5xl font-extrabold tracking-tight">
-                    JLADAN Pro: خدم أسرع، خرج نتائج أحسن، وبلا تضييع الوقت
+                    JLADAN Pro: Work faster. Ship better. Save hours every week.
                 </h1>
 
                 <p className="mt-4 text-base md:text-lg text-muted-foreground">
-                    Library ديال Prompts + Templates + Kits جاهزين للاستعمال.
-                    مناسب للـ creators، marketers، و لأي واحد باغي يربح الوقت ويزيد الجودة.
+                    A curated Library of prompts, templates, and kits built for real output.
+                    Perfect for creators, marketers, freelancers, and founders.
                 </p>
 
                 <div className="mt-8 flex flex-col sm:flex-row gap-3 justify-center">
@@ -111,7 +111,7 @@ export default function PricingPage() {
                         href="/library"
                         className="rounded-xl border border-border px-6 py-3 font-semibold hover:bg-muted text-center"
                     >
-                        Preview Library
+                        Preview the Library
                     </a>
                 </div>
 
@@ -127,42 +127,42 @@ export default function PricingPage() {
             <section className="mt-14 grid gap-6 lg:grid-cols-3 items-stretch">
                 {/* Left: features */}
                 <div className="lg:col-span-2 rounded-2xl border border-border p-8">
-                    <h2 className="text-2xl font-bold">What you get in Pro</h2>
+                    <h2 className="text-2xl font-bold">What’s included</h2>
                     <p className="mt-2 text-sm text-muted-foreground">
-                        كلشي مرتب ومقسم categories باش تلقى اللي محتاج بسرعة.
+                        Everything is organized by category so you can find what you need fast.
                     </p>
 
                     <div className="mt-6 grid md:grid-cols-2 gap-4">
                         <Feature
-                            title="Premium Library Access"
-                            desc="وصول لـ prompts + templates + kits كاملة."
+                            title="Full Pro Library Access"
+                            desc="Unlock prompts, templates, and kits."
                         />
                         <Feature
                             title="Ready-to-use Products"
-                            desc="ملفات جاهزين للتحميل والاستعمال مباشرة."
+                            desc="Downloadable files you can use instantly."
                         />
                         <Feature
                             title="New Drops"
-                            desc="إضافات جديدة بشكل منتظم (weekly/monthly)."
+                            desc="Fresh content added regularly (weekly/monthly)."
                         />
                         <Feature
                             title="Updates & Improvements"
-                            desc="تحسينات وتحديثات للمحتوى اللي كاين."
+                            desc="Ongoing updates to keep everything high-quality."
                         />
                         <Feature
                             title="Request Content"
-                            desc="اقترح محتوى وغا نحاولو نخرّجوه فـ drops الجاية."
+                            desc="Suggest content and we’ll prioritize popular requests."
                         />
                         <Feature
-                            title="Simple, Fast, No Fluff"
-                            desc="محتوى عملي وcentered على النتائج."
+                            title="Simple, Practical, No Fluff"
+                            desc="Built for results, not theory."
                         />
                     </div>
 
                     <div className="mt-8 rounded-xl bg-muted/50 border border-border p-5">
                         <h3 className="font-semibold">Perfect for:</h3>
                         <ul className="mt-3 space-y-2 text-sm text-muted-foreground">
-                            <li>• Marketers: Ads, emails, landing pages, offers</li>
+                            <li>• Marketers: ads, emails, landing pages, offers</li>
                             <li>• Creators: content ideas, scripts, repurposing</li>
                             <li>• Freelancers: proposals, client workflows, delivery</li>
                             <li>• Founders: MVP copy, positioning, product pages</li>
@@ -190,7 +190,7 @@ export default function PricingPage() {
                             <p className="text-sm text-muted-foreground mb-2">/ month</p>
                         </div>
                         <p className="mt-2 text-sm text-muted-foreground">
-                            أقل من ثمن قهوة/أسبوع… وكتربح ساعات ديال الخدمة.
+                            Less than a coffee a week — and it saves you hours.
                         </p>
                     </div>
 
@@ -218,7 +218,7 @@ export default function PricingPage() {
                     </button>
 
                     <p className="mt-4 text-xs text-muted-foreground">
-                        By subscribing you agree to our{" "}
+                        By subscribing, you agree to our{" "}
                         <a className="underline hover:text-foreground" href="/terms">
                             Terms
                         </a>{" "}
@@ -232,7 +232,7 @@ export default function PricingPage() {
                     <div className="mt-6 rounded-xl border border-border bg-muted/40 p-4 text-xs text-muted-foreground">
                         <p className="font-semibold text-foreground">Satisfaction promise</p>
                         <p className="mt-1">
-                            7-day refund request possible (case-by-case). We want you happy.
+                            You can request a refund within 7 days (case-by-case). We want you happy.
                         </p>
                     </div>
                 </div>
@@ -242,7 +242,7 @@ export default function PricingPage() {
             <section className="mt-16 max-w-4xl mx-auto">
                 <h2 className="text-3xl font-bold text-center">FAQ</h2>
                 <p className="text-center mt-2 text-muted-foreground">
-                    أسئلة كيتسولو بزاف قبل الاشتراك
+                    Common questions before subscribing
                 </p>
 
                 <div className="mt-8 grid gap-4">
@@ -271,12 +271,12 @@ export default function PricingPage() {
                         {loading ? "Redirecting..." : "Join JLADAN Pro — $5/mo"}
                     </button>
                     <p className="mt-3 text-xs text-muted-foreground">
-                        Instant access بعد checkout. Cancel anytime.
+                        Instant access after checkout. Cancel anytime.
                     </p>
                 </div>
             </section>
 
-            {/* Promote your tool (optional section kept) */}
+            {/* Promote your tool (optional) */}
             <section className="mt-20">
                 <h2 className="text-3xl font-bold text-center">Promote your AI Tool 🚀</h2>
                 <p className="text-center mt-2 text-muted-foreground">
@@ -293,7 +293,7 @@ export default function PricingPage() {
                     <PlanCard
                         title="Featured"
                         price="$29"
-                        desc="Appear on homepage"
+                        desc="Appear on the homepage"
                         highlight
                         bullets={["Homepage exposure", "Priority placement", "Faster review"]}
                     />
@@ -341,11 +341,13 @@ function PlanCard({
             <h3 className="text-xl font-bold">{title}</h3>
             <p className="text-sm text-muted-foreground mt-2">{desc}</p>
             <p className="mt-4 text-3xl font-extrabold">{price}</p>
+
             <ul className="mt-4 space-y-2 text-sm text-muted-foreground">
                 {bullets.map((b, i) => (
                     <li key={i}>• {b}</li>
                 ))}
             </ul>
+
             <button
                 disabled
                 className="mt-6 w-full rounded-xl border border-border px-4 py-3 font-semibold opacity-60 cursor-not-allowed"
