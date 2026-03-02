@@ -2,6 +2,7 @@ import { cookies } from "next/headers";
 import Link from "next/link";
 import { getAdminAuth, getAdminDb } from "@/lib/firebaseAdmin";
 import DownloadButton from "@/components/DownloadButton";
+import DownloadLimitBadge from "@/components/DownloadLimitBadge";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -140,7 +141,9 @@ export default async function LibraryPage({
                 <h1 className="mt-5 text-4xl md:text-5xl font-extrabold tracking-tight">
                     🔥 JLADAN Library
                 </h1>
-
+                <div className="mt-4 mb-6">
+                    <DownloadLimitBadge />
+                </div>
                 <p className="mt-2 text-muted-foreground max-w-2xl">
                     Exclusive prompts, templates & kits — designed for creators, marketers, and founders.
                 </p>
