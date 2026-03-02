@@ -14,6 +14,7 @@ function getClientIp(): string | null {
 }
 
 export async function GET(req: Request) {
+    console.log("DOWNLOAD API HIT");
     try {
         const { searchParams } = new URL(req.url);
         const productId = searchParams.get("productId");

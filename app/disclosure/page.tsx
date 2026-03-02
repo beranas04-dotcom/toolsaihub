@@ -2,15 +2,23 @@ import { Metadata } from 'next';
 import Link from 'next/link';
 
 export const metadata: Metadata = {
-    title: 'Affiliate Disclosure — AIToolsHub',
-    description: 'Learn about our affiliate partnerships, sponsored listings, and how we maintain editorial independence while recommending AI tools.',
-    keywords: ['affiliate disclosure', 'AI tools', 'sponsored listings', 'AIToolsHub transparency'],
+    title: "Affiliate Disclosure — JLADAN",
+    description:
+        "Learn about our affiliate partnerships, sponsored listings, and how JLADAN maintains transparency while recommending AI tools and digital products.",
+    keywords: [
+        "affiliate disclosure",
+        "JLADAN",
+        "AI tools",
+        "sponsored listings",
+        "transparency",
+    ],
     openGraph: {
-        title: 'Affiliate Disclosure — AIToolsHub',
-        description: 'Learn about our affiliate partnerships and how we maintain editorial independence while recommending AI tools.',
-        url: 'https://aitoolshub.co/disclosure',
-        siteName: 'AIToolsHub',
-        type: 'website',
+        title: "Affiliate Disclosure — JLADAN",
+        description:
+            "Learn how JLADAN uses affiliate links and sponsored placements while maintaining editorial independence.",
+        url: "https://toolsiahub.vercel.app/disclosure", // بدلها بالدومين النهائي ديالك ملي يكون
+        siteName: "JLADAN",
+        type: "website",
     },
 };
 

@@ -1,16 +1,20 @@
 "use client";
 
-type Props = {
-    url: string;
-    label?: string;
+export default function DownloadButton({
+    productId,
+    className,
+    label = "Download",
+}: {
+    productId: string;
     className?: string;
-};
-
-export default function DownloadButton({ url, label = "Download", className = "" }: Props) {
+    label?: string;
+}) {
     return (
         <button
-            type="button"
-            onClick={() => window.open(url, "_blank", "noopener,noreferrer")}
+            onClick={() => {
+                console.log("CLICK DOWNLOAD", productId);
+                window.location.href = `/api/download?productId=${encodeURIComponent(productId)}`;
+            }}
             className={className}
         >
             {label}

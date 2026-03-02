@@ -92,7 +92,8 @@ export default async function ProductsPage() {
                         </h1>
 
                         <p className="mt-3 text-muted-foreground leading-relaxed">
-                            Prompts, templates, kits… كلشي جاهز للتحميل. المجاني متاح للجميع، و Pro كيعطيك الوصول الكامل.
+                            Ready-to-download prompts, templates, and kits. Free items are available for everyone,
+                            and Pro unlocks the full library.
                         </p>
 
                         <div className="mt-5 flex flex-wrap items-center gap-2">
@@ -133,7 +134,7 @@ export default async function ProductsPage() {
                                     Go to Library
                                 </Link>
                                 <Link
-                                    href="/pricing"
+                                    href="/manage"
                                     className="rounded-2xl border border-border bg-background px-5 py-2.5 font-semibold hover:bg-muted/40"
                                 >
                                     Manage Plan
@@ -183,8 +184,8 @@ export default async function ProductsPage() {
                                 {p.fileUrl ? (
                                     canDownload ? (
                                         <DownloadButton
-                                            url={p.fileUrl}
-                                            className="w-full rounded-2xl bg-primary px-4 py-2.5 text-center font-semibold text-white shadow-sm hover:opacity-95"
+                                            productId={p.id}
+                                            className="w-full rounded-2xl bg-primary px-4 py-2.5 text-center font-semibold text-white"
                                             label="Download"
                                         />
                                     ) : (

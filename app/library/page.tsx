@@ -289,8 +289,9 @@ export default async function LibraryPage({
                                 <div className="mt-6">
                                     {p.fileUrl ? (
                                         <DownloadButton
-                                            url={p.fileUrl}
-                                            className="inline-block w-full text-center rounded-2xl bg-primary text-white py-3 font-semibold hover:opacity-95"
+                                            productId={p.id}
+                                            className="w-full rounded-2xl bg-primary px-4 py-2.5 text-center font-semibold text-white"
+                                            label="Download"
                                         />
                                     ) : (
                                         <button
