@@ -1,24 +1,22 @@
 import { NextResponse } from "next/server";
 import { cookies, headers } from "next/headers";
 import { getAdminAuth, getAdminDb } from "@/lib/firebaseAdmin";
-import admin from "firebase-admin";
+import { FieldValue } from "firebase-admin/firestore";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 function getClientIp(): string | null {
-    // Vercel / proxies
     const h = headers();
     const xff = h.get("x-forwarded-for");
     if (xff) return xff.split(",")[0]?.trim() || null;
-    return h.get("x-real-ip");
+    return h.get("x-real-ip") || h.get("x-real-ip");
 }
 
 export async function GET(req: Request) {
     try {
         const { searchParams } = new URL(req.url);
         const productId = searchParams.get("productId");
-
         if (!productId) {
             return NextResponse.json({ error: "Missing productId" }, { status: 400 });
         }
@@ -54,7 +52,7 @@ export async function GET(req: Request) {
             return NextResponse.json({ error: "File not available" }, { status: 404 });
         }
 
-        // 3) Check subscription only if tier is pro
+        // 3) Check subscription only if pro
         if (tier === "pro") {
             const userSnap = await db.collection("users").doc(uid).get();
             const status = userSnap.data()?.subscription?.status;
@@ -63,12 +61,11 @@ export async function GET(req: Request) {
             }
         }
 
-        // 4) TRACK DOWNLOAD (server-side)
+        // 4) TRACK (logs + counters)
         const ip = getClientIp();
         const ua = headers().get("user-agent");
 
-        const logRef = db.collection("download_logs").doc(); // auto id
-
+        const logRef = db.collection("download_logs").doc();
         const productRef = db.collection("products").doc(productId);
         const userRef = db.collection("users").doc(uid);
 
@@ -83,12 +80,11 @@ export async function GET(req: Request) {
                 ua: ua || null,
             });
 
-            // increment counters
             tx.set(
                 productRef,
                 {
                     stats: {
-                        downloads: admin.firestore.FieldValue.increment(1),
+                        downloads: FieldValue.increment(1),
                         lastDownloadedAt: Date.now(),
                     },
                 },
@@ -99,7 +95,7 @@ export async function GET(req: Request) {
                 userRef,
                 {
                     stats: {
-                        downloads: admin.firestore.FieldValue.increment(1),
+                        downloads: FieldValue.increment(1),
                         lastDownloadedAt: Date.now(),
                     },
                 },
@@ -107,9 +103,13 @@ export async function GET(req: Request) {
             );
         });
 
-        // 5) Redirect to file
+        // 5) Redirect
         return NextResponse.redirect(fileUrl, { status: 302 });
-    } catch (e) {
-        return NextResponse.json({ error: "Server error" }, { status: 500 });
+    } catch (e: any) {
+        console.error("DOWNLOAD_TRACKING_ERROR:", e?.message || e);
+        return NextResponse.json(
+            { error: e?.message || "Server error" },
+            { status: 500 }
+        );
     }
 }
