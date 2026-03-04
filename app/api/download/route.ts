@@ -215,7 +215,7 @@ export async function GET(req: Request) {
             status: 200,
             headers: {
                 "Content-Type": mimeType,
-                "Content-Disposition": `attachment; filename="${encodeURIComponent(filename)}"`,
+                "Content-Disposition": `attachment; filename="${filename}"`,
                 "Cache-Control": "private, no-store, max-age=0",
 
                 // helpful headers for UI/badge debugging

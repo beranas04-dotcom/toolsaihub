@@ -74,11 +74,25 @@ export async function GET() {
     const usedUid = uidLimSnap.exists ? Number((uidLimSnap.data() as any)?.count || 0) : 0;
     const usedIp = ipLimSnap.exists ? Number((ipLimSnap.data() as any)?.count || 0) : 0;
 
+    const remainingUid = Math.max(0, limitUid - usedUid);
+    const remainingIp = Math.max(0, limitIp - usedIp);
+
+    // effective = الحد اللي غادي يوقفك فعلاً
+    const remaining = Math.min(remainingUid, remainingIp);
+    const limit = Math.min(limitUid, limitIp);
+
+    // used (تقريبي) باش يبان فـ UI
+    const count = Math.max(usedUid, usedIp);
+
     return NextResponse.json({
-        authenticated: true,
+        ok: true,
         plan,
-        uid: { used: usedUid, limit: limitUid, remaining: Math.max(0, limitUid - usedUid) },
-        ip: { used: usedIp, limit: limitIp, remaining: Math.max(0, limitIp - usedIp) },
         dateKey,
+        limit,
+        count,
+        remaining,
+        // optional debug (إلا بغيتي)
+        uid: { used: usedUid, limit: limitUid, remaining: remainingUid },
+        ip: { used: usedIp, limit: limitIp, remaining: remainingIp },
     });
 }
