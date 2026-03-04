@@ -1,121 +1,181 @@
+// app/api/download/route.ts
 import { NextResponse } from "next/server";
 import { cookies, headers } from "next/headers";
-import { getAdminAuth, getAdminDb } from "@/lib/firebaseAdmin";
+import { Readable } from "stream";
+import crypto from "crypto";
 import { FieldValue } from "firebase-admin/firestore";
-import { google } from "googleapis";
+import { getAdminAuth, getAdminDb } from "@/lib/firebaseAdmin";
+import { getDriveClient } from "@/lib/googleDrive";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-function getClientIp(): string | null {
+const COOKIE_NAME = process.env.USER_COOKIE_NAME || "__user_session";
+const FREE_LIMIT_UID = Number(process.env.FREE_DOWNLOADS_PER_DAY || 3);
+const PRO_LIMIT_UID = Number(process.env.PRO_DOWNLOADS_PER_DAY || 50);
+
+const FREE_LIMIT_IP = Number(process.env.FREE_DOWNLOADS_PER_DAY_PER_IP || 10);
+const PRO_LIMIT_IP = Number(process.env.PRO_DOWNLOADS_PER_DAY_PER_IP || 200);
+
+function todayKeyUTC() {
+    const d = new Date();
+    const y = d.getUTCFullYear();
+    const m = String(d.getUTCMonth() + 1).padStart(2, "0");
+    const day = String(d.getUTCDate()).padStart(2, "0");
+    return `${y}${m}${day}`; // e.g. 20260302
+}
+
+function getIP(): string {
     const h = headers();
-    const xff = h.get("x-forwarded-for");
-    if (xff) return xff.split(",")[0]?.trim() || null;
-    return h.get("x-real-ip");
+    const xf = h.get("x-forwarded-for");
+    if (xf) return xf.split(",")[0]?.trim() || "unknown";
+    return h.get("x-real-ip") || "unknown";
 }
 
-function dayKeyUTC(ts = Date.now()) {
-    const d = new Date(ts);
-    const yyyy = d.getUTCFullYear();
-    const mm = String(d.getUTCMonth() + 1).padStart(2, "0");
-    const dd = String(d.getUTCDate()).padStart(2, "0");
-    return `${yyyy}${mm}${dd}`;
+function safeUA() {
+    return headers().get("user-agent") || "";
 }
 
-function getDriveAuth() {
-    const clientEmail = process.env.GOOGLE_DRIVE_CLIENT_EMAIL;
-    const pkB64 = process.env.GOOGLE_DRIVE_PRIVATE_KEY_B64;
+function sanitizeFilename(name: string) {
+    return name.replace(/[/\\?%*:|"<>]/g, "-");
+}
 
-    if (!clientEmail || !pkB64) throw new Error("Missing Drive env vars");
+function hashIP(ip: string) {
+    // docId safe + no PII direct
+    return crypto.createHash("sha256").update(ip).digest("hex").slice(0, 32);
+}
 
-    const privateKey = Buffer.from(pkB64, "base64")
-        .toString("utf8")
-        .replace(/\\n/g, "\n");
+async function getUidFromSessionCookie(): Promise<string | null> {
+    const sessionCookie = cookies().get(COOKIE_NAME)?.value;
+    if (!sessionCookie) return null;
 
-    return new google.auth.JWT({
-        email: clientEmail,
-        key: privateKey,
-        scopes: ["https://www.googleapis.com/auth/drive.readonly"],
-    });
+    try {
+        const adminAuth = getAdminAuth();
+        const decoded = await adminAuth.verifySessionCookie(sessionCookie, true);
+        return decoded?.uid || null;
+    } catch {
+        return null;
+    }
 }
 
 export async function GET(req: Request) {
     try {
-        const { searchParams } = new URL(req.url);
-        const productId = searchParams.get("productId");
-        if (!productId) return NextResponse.json({ error: "Missing productId" }, { status: 400 });
+        const url = new URL(req.url);
+        const productId = url.searchParams.get("productId")?.trim();
 
-        // 1) Verify session cookie (login required)
-        const cookieName = process.env.USER_COOKIE_NAME || "__user_session";
-        const sessionCookie = cookies().get(cookieName)?.value;
-        if (!sessionCookie) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        if (!productId) {
+            return NextResponse.json({ error: "Missing productId" }, { status: 400 });
+        }
 
-        const adminAuth = getAdminAuth();
-        const decoded = await adminAuth.verifySessionCookie(sessionCookie, true);
-        const uid = decoded?.uid;
-        if (!uid) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        // 1) Auth required
+        const uid = await getUidFromSessionCookie();
+        if (!uid) {
+            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        }
 
         const db = getAdminDb();
 
         // 2) Load product
         const prodRef = db.collection("products").doc(productId);
         const prodSnap = await prodRef.get();
-        if (!prodSnap.exists) return NextResponse.json({ error: "Product not found" }, { status: 404 });
+
+        if (!prodSnap.exists) {
+            return NextResponse.json({ error: "Product not found" }, { status: 404 });
+        }
 
         const product = prodSnap.data() as any;
-        const fileId = product?.fileUrl as string | undefined; // fileUrl now stores Drive FILE_ID
-        const tier = (product?.tier || "pro") as "free" | "pro";
-        const title = (product?.title || "download") as string;
+        const title = String(product?.title || "download");
+        const tier = (product?.tier === "free" ? "free" : "pro") as "free" | "pro";
 
-        if (!fileId) return NextResponse.json({ error: "File not available" }, { status: 404 });
+        // ✅ fileUrl == Drive fileId
+        const fileId = typeof product?.fileUrl === "string" ? product.fileUrl.trim() : "";
+        if (!fileId) {
+            return NextResponse.json(
+                { error: "Missing fileUrl (Drive fileId) on product" },
+                { status: 400 }
+            );
+        }
 
-        // 3) User (Pro status + limit decision)
+        // 3) Subscription check (pro products)
         const userRef = db.collection("users").doc(uid);
         const userSnap = await userRef.get();
         const isProActive = userSnap.data()?.subscription?.status === "active";
 
         if (tier === "pro" && !isProActive) {
-            return NextResponse.json({ error: "Pro required" }, { status: 403 });
+            return NextResponse.json({ error: "Pro subscription required" }, { status: 403 });
         }
 
-        // 4) Rate limit per day (per user)
-        const PRO_LIMIT = Number(process.env.PRO_DOWNLOADS_PER_DAY || 50);
-        const FREE_LIMIT = Number(process.env.FREE_DOWNLOADS_PER_DAY || 10);
-        const limit = isProActive ? PRO_LIMIT : FREE_LIMIT;
+        // 4) Limits
+        const plan = isProActive ? ("pro" as const) : ("free" as const);
+        const limitUid = plan === "pro" ? PRO_LIMIT_UID : FREE_LIMIT_UID;
+        const limitIp = plan === "pro" ? PRO_LIMIT_IP : FREE_LIMIT_IP;
 
-        const day = dayKeyUTC();
-        const rlRef = db.collection("rate_limits").doc(`${uid}_${day}`);
+        const dateKey = todayKeyUTC();
+        const ip = getIP();
+        const ipKey = hashIP(ip);
+        const ua = safeUA();
 
-        const ip = getClientIp();
-        const ua = headers().get("user-agent");
+        const limitUidDocId = `${uid}_${dateKey}`;
+        const limitIpDocId = `${ipKey}_${dateKey}`;
+
+        const limitUidRef = db.collection("download_limits").doc(limitUidDocId);
+        const limitIpRef = db.collection("download_ip_limits").doc(limitIpDocId);
         const logRef = db.collection("download_logs").doc();
 
+        let remainingUid = 0;
+        let remainingIp = 0;
+
+        // 5) Transaction: enforce BOTH uid+ip + logs + counters
         await db.runTransaction(async (tx) => {
-            const rlSnap = await tx.get(rlRef);
-            const used = rlSnap.exists ? Number((rlSnap.data() as any)?.count || 0) : 0;
-            if (used >= limit) throw new Error("RATE_LIMIT");
+            const [uidSnap, ipSnap] = await Promise.all([tx.get(limitUidRef), tx.get(limitIpRef)]);
+
+            const currentUid = uidSnap.exists ? Number((uidSnap.data() as any)?.count || 0) : 0;
+            const currentIp = ipSnap.exists ? Number((ipSnap.data() as any)?.count || 0) : 0;
+
+            if (currentUid >= limitUid) throw new Error("RATE_LIMIT_UID");
+            if (currentIp >= limitIp) throw new Error("RATE_LIMIT_IP");
+
+            remainingUid = Math.max(0, limitUid - (currentUid + 1));
+            remainingIp = Math.max(0, limitIp - (currentIp + 1));
 
             tx.set(
-                rlRef,
+                limitUidRef,
                 {
                     uid,
-                    day,
-                    limit,
+                    plan,
+                    dateKey,
+                    limit: limitUid,
                     count: FieldValue.increment(1),
                     updatedAt: Date.now(),
-                    createdAt: rlSnap.exists ? (rlSnap.data() as any)?.createdAt || Date.now() : Date.now(),
+                    createdAt: uidSnap.exists ? (uidSnap.data() as any)?.createdAt || Date.now() : Date.now(),
+                },
+                { merge: true }
+            );
+
+            tx.set(
+                limitIpRef,
+                {
+                    ipHash: ipKey,
+                    plan,
+                    dateKey,
+                    limit: limitIp,
+                    count: FieldValue.increment(1),
+                    updatedAt: Date.now(),
+                    createdAt: ipSnap.exists ? (ipSnap.data() as any)?.createdAt || Date.now() : Date.now(),
                 },
                 { merge: true }
             );
 
             tx.set(logRef, {
                 uid,
+                ipHash: ipKey,
+                userAgent: ua,
                 productId,
                 productTitle: title,
-                tier,
+                productTier: tier,
+                plan,
+                fileId,
                 createdAt: Date.now(),
-                ip: ip || null,
-                ua: ua || null,
             });
 
             tx.set(
@@ -131,9 +191,8 @@ export async function GET(req: Request) {
             );
         });
 
-        // 5) Stream from Google Drive (private)
-        const auth = getDriveAuth();
-        const drive = google.drive({ version: "v3", auth });
+        // 6) Stream from Google Drive
+        const drive = getDriveClient();
 
         const meta = await drive.files.get({
             fileId,
@@ -141,7 +200,7 @@ export async function GET(req: Request) {
             supportsAllDrives: true,
         });
 
-        const filename = (meta.data.name || title || "download").replace(/[/\\?%*:|"<>]/g, "-");
+        const filename = sanitizeFilename(meta.data.name || `${title}.pdf`);
         const mimeType = meta.data.mimeType || "application/octet-stream";
 
         const fileRes = await drive.files.get(
@@ -149,25 +208,49 @@ export async function GET(req: Request) {
             { responseType: "stream" }
         );
 
-        const stream = fileRes.data as any;
+        const nodeStream = fileRes.data as any;
+        const webStream = Readable.toWeb(nodeStream) as unknown as ReadableStream;
 
-        return new Response(stream as any, {
+        return new Response(webStream, {
             status: 200,
             headers: {
                 "Content-Type": mimeType,
-                "Content-Disposition": `attachment; filename="${filename}"`,
+                "Content-Disposition": `attachment; filename="${encodeURIComponent(filename)}"`,
                 "Cache-Control": "private, no-store, max-age=0",
+
+                // helpful headers for UI/badge debugging
+                "X-Plan": plan,
+                "X-UID-Limit": String(limitUid),
+                "X-UID-Remaining": String(remainingUid),
+                "X-IP-Limit": String(limitIp),
+                "X-IP-Remaining": String(remainingIp),
             },
         });
-    } catch (e: any) {
-        if (String(e?.message || "").includes("RATE_LIMIT")) {
+    } catch (err: any) {
+        const msg = String(err?.message || "");
+
+        if (msg.includes("RATE_LIMIT_UID")) {
             return NextResponse.json(
-                { error: "Daily download limit reached. Please try again tomorrow." },
+                { error: "Daily download limit reached for your account. Try again tomorrow." },
                 { status: 429 }
             );
         }
 
-        console.error("DOWNLOAD_API_ERROR:", e?.message || e);
-        return NextResponse.json({ error: e?.message || "Server error" }, { status: 500 });
+        if (msg.includes("RATE_LIMIT_IP")) {
+            return NextResponse.json(
+                { error: "Daily download limit reached for your network (IP). Try again tomorrow." },
+                { status: 429 }
+            );
+        }
+
+        if (msg.includes("Google Drive API has not been used") || msg.includes("is disabled")) {
+            return NextResponse.json(
+                { error: "Google Drive API is disabled. Enable it in Google Cloud Console." },
+                { status: 500 }
+            );
+        }
+
+        console.error("DOWNLOAD_API_ERROR:", err);
+        return NextResponse.json({ error: "Server error" }, { status: 500 });
     }
 }
