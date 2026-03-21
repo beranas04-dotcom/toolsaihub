@@ -3,6 +3,7 @@
 import Link from "next/link";
 import type { Tool } from "@/types";
 import { resolveLogo } from "@/lib/toolMedia";
+import SponsoredBadge from "@/components/tools/SponsoredBadge";
 
 function Pill({
     children,
@@ -21,29 +22,40 @@ function Pill({
                     : "bg-muted text-muted-foreground";
 
     return (
-        <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-semibold ${cls}`}>
+        <span
+            className={`inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-semibold ${cls}`}
+        >
             {children}
         </span>
     );
 }
 
+function isSponsoredActive(tool: any) {
+    if (!tool?.sponsored) return false;
+    if (!tool?.sponsorUntil) return true;
+
+    const ms = Date.parse(String(tool.sponsorUntil));
+    if (!Number.isFinite(ms)) return false;
+
+    return ms > Date.now();
+}
+
 export default function ToolCardPro({ tool }: { tool: Tool }) {
     const detailsHref = `/tools/${tool.slug || tool.id}`;
 
-    const hasVisit = Boolean((tool as any).affiliateUrl || (tool as any).website || (tool as any).websiteUrl);
+    const hasVisit = Boolean(
+        (tool as any).affiliateUrl || (tool as any).website || (tool as any).websiteUrl
+    );
 
-    // ✅ Sponsored logic (pro)
-    const sponsorUntil = (tool as any).sponsorUntil;
-    const sponsorActive =
-        (tool as any).sponsored === true &&
-        (!sponsorUntil || (Number.isFinite(Date.parse(String(sponsorUntil))) && Date.parse(String(sponsorUntil)) > Date.now()));
-
-    const isSponsored = sponsorActive;
+    const isSponsored = isSponsoredActive(tool);
     const showFeatured = Boolean((tool as any).featured && !isSponsored);
 
+    const outUrl = `/api/out?toolId=${encodeURIComponent(
+        (tool as any).slug || tool.id
+    )}&ref=card_pro`;
 
-    // ✅ Outbound with ref
-    const outUrl = `/api/out?toolId=${encodeURIComponent((tool as any).slug || tool.id)}&ref=card_pro`;
+    const logoSrc = resolveLogo(tool);
+    const fallback = (tool.name || "?").charAt(0).toUpperCase();
 
     return (
         <div className="group rounded-2xl border border-border bg-card p-6 hover:border-primary/60 hover:shadow-md transition">
@@ -51,37 +63,34 @@ export default function ToolCardPro({ tool }: { tool: Tool }) {
             <Link href={detailsHref} className="block">
                 <div className="flex items-start justify-between gap-3">
                     <div className="flex items-start gap-3 min-w-0">
-
-                        {/* ✅ Logo */}
-                        {(() => {
-                            const logoSrc = resolveLogo(tool);
-                            const fallback = (tool.name || "?").charAt(0).toUpperCase();
-
-                            return logoSrc ? (
-                                <img
-                                    src={logoSrc}
-                                    alt={tool.name}
-                                    className="w-10 h-10 rounded-lg object-contain bg-muted/40 p-1.5"
-                                    loading="lazy"
-                                    referrerPolicy="no-referrer"
-                                    onError={(e) => {
-                                        // fallback safe (no DOM append)
-                                        e.currentTarget.onerror = null;
-                                        e.currentTarget.src = "/logo.svg";
-                                    }}
-                                />
-                            ) : (
-                                <div className="w-10 h-10 rounded-lg flex items-center justify-center bg-muted text-sm font-bold">
-                                    {fallback}
-                                </div>
-                            );
-                        })()}
-
-
+                        {/* Logo */}
+                        {logoSrc ? (
+                            <img
+                                src={logoSrc}
+                                alt={tool.name}
+                                className="w-10 h-10 rounded-lg object-contain bg-muted/40 p-1.5"
+                                loading="lazy"
+                                referrerPolicy="no-referrer"
+                                onError={(e) => {
+                                    e.currentTarget.onerror = null;
+                                    e.currentTarget.src = "/logo.svg";
+                                }}
+                            />
+                        ) : (
+                            <div className="w-10 h-10 rounded-lg flex items-center justify-center bg-muted text-sm font-bold">
+                                {fallback}
+                            </div>
+                        )}
 
                         <div className="min-w-0">
-                            <div className="font-semibold text-lg leading-tight group-hover:text-primary transition line-clamp-1">
-                                {tool.name}
+                            <div className="flex flex-wrap items-center gap-2">
+                                <div className="font-semibold text-lg leading-tight group-hover:text-primary transition line-clamp-1">
+                                    {tool.name}
+                                </div>
+
+                                {isSponsored ? (
+                                    <SponsoredBadge label={(tool as any).sponsorLabel} />
+                                ) : null}
                             </div>
 
                             {tool.tagline ? (
@@ -92,9 +101,10 @@ export default function ToolCardPro({ tool }: { tool: Tool }) {
                         </div>
                     </div>
 
-                    {tool.freeTrial ? <Pill variant="success">Free trial</Pill> : null}
+                    <div className="flex flex-col items-end gap-2 shrink-0">
+                        {tool.freeTrial ? <Pill variant="success">Free trial</Pill> : null}
+                    </div>
                 </div>
-
             </Link>
 
             {/* Badges */}
@@ -102,13 +112,13 @@ export default function ToolCardPro({ tool }: { tool: Tool }) {
                 {tool.category ? <Pill variant="primary">{tool.category}</Pill> : null}
                 {tool.pricing ? <Pill>{tool.pricing}</Pill> : null}
 
-                {isSponsored ? (
-                    <Pill variant="warn">⭐ {(tool as any).sponsorLabel || "Sponsored"}</Pill>
-                ) : showFeatured ? (
-                    <Pill variant="warn">Featured</Pill>
-                ) : null}
+                {showFeatured ? <Pill variant="warn">Featured</Pill> : null}
 
                 {tool.verified ? <Pill>Verified</Pill> : null}
+
+                {isSponsored && (tool as any).sponsorTier ? (
+                    <Pill variant="warn">{String((tool as any).sponsorTier)}</Pill>
+                ) : null}
             </div>
 
             {/* Tags */}
@@ -125,7 +135,14 @@ export default function ToolCardPro({ tool }: { tool: Tool }) {
                 </div>
             ) : null}
 
-            {/* Actions (pro look) */}
+            {/* Disclosure */}
+            {isSponsored ? (
+                <div className="mt-4 rounded-xl border border-amber-500/20 bg-amber-500/5 px-3 py-2 text-[11px] text-amber-700 dark:text-amber-300">
+                    Sponsored listing
+                </div>
+            ) : null}
+
+            {/* Actions */}
             <div className="mt-6 flex items-center justify-between gap-3">
                 <Link
                     href={detailsHref}

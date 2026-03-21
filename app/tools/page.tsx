@@ -4,6 +4,8 @@ import ToolsFilters from "@/components/tools/ToolsFilters";
 import { getAllTools } from "@/lib/toolsRepo";
 import ToolCardPro from "@/components/tools/ToolCardPro";
 import { siteMetadata } from "@/lib/siteMetadata";
+import { getPublishedCategories } from "@/lib/publicCategories";
+
 export const dynamic = "force-dynamic";
 
 const PER_PAGE = 12;
@@ -13,6 +15,11 @@ function parsePage(v?: string) {
     if (!Number.isFinite(n) || n < 1) return 1;
     return Math.floor(n);
 }
+
+function siteUrl() {
+    return (process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000").replace(/\/$/, "");
+}
+
 const base = siteUrl();
 
 const collectionJsonLd = {
@@ -23,9 +30,6 @@ const collectionJsonLd = {
     description:
         "Browse curated AI tools across categories. Compare features, pricing, and discover the best tools for your workflow.",
 };
-function siteUrl() {
-    return (process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000").replace(/\/$/, "");
-}
 
 function normalizePricing(pricing?: string) {
     const p = (pricing || "").toLowerCase();
@@ -38,11 +42,11 @@ function normalizePricing(pricing?: string) {
     return "";
 }
 
-function pickDate(t: any) {
-    // newest: prefer updatedAt -> createdAt -> lastUpdated
-    const d = t?.updatedAt || t?.createdAt || t?.lastUpdated;
-    const ms = Date.parse(d || "");
-    return Number.isFinite(ms) ? ms : 0;
+function normalizeCategory(s?: string) {
+    return String(s || "")
+        .trim()
+        .toLowerCase()
+        .replace(/[_\s]+/g, "-");
 }
 
 function buildCanonical(params: {
@@ -57,9 +61,7 @@ function buildCanonical(params: {
     if (params.category) qs.set("category", params.category);
     if (params.pricing) qs.set("pricing", params.pricing);
 
-    // featured هو default => ما نحطوهش
     if (params.sort && params.sort !== "featured") qs.set("sort", params.sort);
-
     if (params.page > 1) qs.set("page", String(params.page));
 
     const s = qs.toString();
@@ -103,13 +105,10 @@ export async function generateMetadata({
         title,
         description,
         alternates: { canonical },
-
-        // ✅ Pagination SEO: خلي page>1 noindex باش ما تكدّرش مع duplicates
         robots:
             page > 1
                 ? { index: false, follow: true }
                 : { index: true, follow: true },
-
         openGraph: {
             type: "website",
             url: canonical,
@@ -141,37 +140,34 @@ export default async function ToolsPage({
     searchParams?: { page?: string; category?: string; pricing?: string; sort?: string };
 }) {
     const page = parsePage(searchParams?.page);
-    const categoryFilter = (searchParams?.category || "").trim().toLowerCase();
+    const categoryFilter = normalizeCategory(searchParams?.category || "");
     const pricingFilter = (searchParams?.pricing || "").trim().toLowerCase();
     const sort = ((searchParams?.sort || "featured").trim() || "featured").toLowerCase();
 
-    const all = await getAllTools();
+    const [all, publishedCategories] = await Promise.all([
+        getAllTools(),
+        getPublishedCategories(),
+    ]);
 
-    const categories = Array.from(
-        new Set(all.map((t) => (t.category || "").trim()).filter(Boolean))
-    ).sort((a, b) => a.localeCompare(b));
+    const categoriesFromAdmin = publishedCategories.map((c) => c.slug).filter(Boolean);
 
-    // filter
-    let filtered = all.filter((t) => {
-        const catOk = categoryFilter
-            ? (t.category || "").trim().toLowerCase() === categoryFilter
-            : true;
+    const categories =
+        categoriesFromAdmin.length > 0
+            ? categoriesFromAdmin
+            : Array.from(
+                new Set(all.map((t) => normalizeCategory((t as any).category || "")).filter(Boolean))
+            ).sort((a, b) => a.localeCompare(b));
 
-        const pricingKey = normalizePricing((t as any).pricing);
+    let filtered = all.filter((t: any) => {
+        const toolCategory = normalizeCategory(t.category || "");
+        const catOk = categoryFilter ? toolCategory === categoryFilter : true;
+
+        const pricingKey = normalizePricing(t.pricing);
         const pricingOk = pricingFilter ? pricingKey === pricingFilter : true;
-        const base = siteUrl();
 
-        const collectionJsonLd = {
-            "@context": "https://schema.org",
-            "@type": "CollectionPage",
-            name: "AI Tools Directory",
-            url: `${base}/tools`,
-            description:
-                "Browse curated AI tools across categories. Compare features, pricing, and discover the best tools for your workflow.",
-        };
         return catOk && pricingOk;
     });
-    // sort (Sponsored ALWAYS first, then chosen sort inside groups)
+
     function sponsorActive(t: any) {
         if (String(t?.status || "").toLowerCase() !== "published") return false;
         if (t?.sponsored !== true) return false;
@@ -191,31 +187,34 @@ export default async function ToolsPage({
     }
 
     filtered = filtered.slice().sort((a: any, b: any) => {
-        // 1) Sponsored active first
         const as = sponsorActive(a) ? 1 : 0;
         const bs = sponsorActive(b) ? 1 : 0;
         if (bs !== as) return bs - as;
 
-        // 2) Higher sponsorPriority first (only matters if both sponsored)
         const ap = sponsorPriority(a);
         const bp = sponsorPriority(b);
         if (bp !== ap) return bp - ap;
 
-        // 3) Featured
+        if (sort === "newest") {
+            const ad = Date.parse(String(a?.updatedAt || a?.createdAt || a?.lastUpdated || "")) || 0;
+            const bd = Date.parse(String(b?.updatedAt || b?.createdAt || b?.lastUpdated || "")) || 0;
+            if (bd !== ad) return bd - ad;
+        }
+
+        if (sort === "az") {
+            return String(a?.name || "").localeCompare(String(b?.name || ""));
+        }
+
         const af = a.featured ? 1 : 0;
         const bf = b.featured ? 1 : 0;
         if (bf !== af) return bf - af;
 
-        // 4) Verified
         const av = a.verified ? 1 : 0;
         const bv = b.verified ? 1 : 0;
         if (bv !== av) return bv - av;
 
-        // 5) Name
         return String(a?.name || "").localeCompare(String(b?.name || ""));
     });
-
-
 
     const total = filtered.length;
     const totalPages = Math.max(1, Math.ceil(total / PER_PAGE));
@@ -244,6 +243,7 @@ export default async function ToolsPage({
                 type="application/ld+json"
                 dangerouslySetInnerHTML={{ __html: JSON.stringify(collectionJsonLd) }}
             />
+
             <div className="flex items-end justify-between gap-4 mb-6">
                 <div>
                     <h1 className="text-3xl font-bold mb-2">Tools</h1>
@@ -293,7 +293,7 @@ export default async function ToolsPage({
                     slug: t.slug,
                     name: t.name,
                     tagline: t.tagline,
-                    category: t.category,
+                    category: normalizeCategory(t.category),
                     pricing: t.pricing,
                     tags: t.tags || [],
                 }))}
@@ -308,7 +308,6 @@ export default async function ToolsPage({
                     <ToolCardPro key={t.id} tool={t} />
                 ))}
             </div>
-
 
             {totalPages > 1 && (
                 <div className="mt-10 flex items-center justify-between gap-4">
@@ -334,7 +333,6 @@ export default async function ToolsPage({
                     >
                         Next →
                     </Link>
-
                 </div>
             )}
         </main>

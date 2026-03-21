@@ -1,58 +1,99 @@
-import type { Metadata } from "next";
 import Link from "next/link";
-import { getAllTools } from "@/lib/toolsRepo";
-import { slugifyCategory } from "@/lib/utils";
-import type { Tool } from "@/types";
+import { getAdminDb } from "@/lib/firebaseAdmin";
+import { getPublishedCategories } from "@/lib/publicCategories";
 
+export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
-export const revalidate = 0;
-
-export const metadata: Metadata = {
-    title: "AI Tools Categories",
-    description:
-        "Browse AI tools by category. Discover the best tools for writing, design, marketing, coding, and more.",
-};
 
 export default async function CategoriesPage() {
-    const tools = (await getAllTools()) as Tool[];
+    const db = getAdminDb();
+    const categories = await getPublishedCategories();
 
-    const categoryMap = tools.reduce<Record<string, number>>((acc, tool) => {
-        const cat = (tool.category || "").trim();
-        if (!cat) return acc;
-        acc[cat] = (acc[cat] || 0) + 1;
-        return acc;
-    }, {});
+    let counts: Record<string, number> = {};
 
-    const categories = Object.entries(categoryMap).sort((a, b) =>
-        a[0].localeCompare(b[0])
-    );
+    try {
+        const toolsSnap = await db
+            .collection("tools")
+            .where("published", "==", true)
+            .get();
+
+        const rawCounts: Record<string, number> = {};
+
+        toolsSnap.docs.forEach((doc) => {
+            const data = doc.data() as any;
+            const category = String(data?.category || "general")
+                .trim()
+                .toLowerCase()
+                .replace(/[_\s]+/g, "-");
+
+            rawCounts[category] = (rawCounts[category] || 0) + 1;
+        });
+
+        counts = rawCounts;
+    } catch (err) {
+        console.error("CATEGORIES_PAGE_COUNTS_ERROR:", err);
+    }
 
     return (
-        <div className="max-w-6xl mx-auto px-6 py-16">
-            <h1 className="text-3xl font-bold mb-8">Browse by Category</h1>
+        <main className="max-w-6xl mx-auto px-6 py-16 md:py-20">
+            <section className="mb-10">
+                <div className="inline-flex items-center gap-2 rounded-full border border-border bg-muted/30 px-3 py-1 text-xs text-muted-foreground">
+                    <span className="h-2 w-2 rounded-full bg-primary" />
+                    Explore by category
+                </div>
 
-            <div className="grid md:grid-cols-3 gap-6">
-                {categories.map(([cat, count]) => {
-                    const slug = slugifyCategory(cat);
+                <h1 className="mt-5 text-4xl md:text-5xl font-extrabold tracking-tight">
+                    Categories
+                </h1>
 
-                    return (
-                        <Link
-                            key={cat}
-                            href={`/categories/${slug}`}
-                            className="p-6 rounded-xl border border-border bg-card hover:border-primary hover:shadow-md transition"
-                        >
-                            <div className="flex items-center justify-between">
-                                <h2 className="text-xl font-semibold capitalize">{cat}</h2>
-                                <span className="text-sm text-muted-foreground">{count} tools</span>
-                            </div>
+                <p className="mt-3 text-muted-foreground max-w-2xl">
+                    Browse AI tools by category and discover the best tools for your workflow.
+                </p>
+            </section>
 
-                            <p className="text-muted-foreground mt-2">
-                                View the best AI tools in {cat}
-                            </p>
-                        </Link>
-                    );
-                })}
-            </div>
-        </div>
+            {categories.length === 0 ? (
+                <div className="rounded-3xl border border-border bg-muted/20 p-10 text-center">
+                    <h2 className="text-xl font-bold">No categories found</h2>
+                    <p className="mt-2 text-sm text-muted-foreground">
+                        Add and publish categories from the admin panel.
+                    </p>
+                </div>
+            ) : (
+                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {categories.map((cat) => {
+                        const count = counts[cat.slug] || 0;
+
+                        return (
+                            <Link
+                                key={cat.id}
+                                href={`/categories/${encodeURIComponent(cat.slug)}`}
+                                className="rounded-3xl border border-border/60 bg-background/35 backdrop-blur p-6 hover:shadow-md transition"
+                            >
+                                <div className="flex items-start justify-between gap-3">
+                                    <div>
+                                        <h2 className="text-xl font-extrabold">
+                                            {cat.icon ? `${cat.icon} ` : ""}
+                                            {cat.name}
+                                        </h2>
+
+                                        <p className="mt-2 text-sm text-muted-foreground line-clamp-3">
+                                            {cat.description || "Browse tools in this category."}
+                                        </p>
+                                    </div>
+
+                                    <span className="rounded-full border border-border bg-muted/30 px-3 py-1 text-xs text-muted-foreground">
+                                        {count} tool{count === 1 ? "" : "s"}
+                                    </span>
+                                </div>
+
+                                <div className="mt-6 inline-flex items-center text-sm underline text-muted-foreground hover:text-foreground">
+                                    Explore category →
+                                </div>
+                            </Link>
+                        );
+                    })}
+                </div>
+            )}
+        </main>
     );
 }

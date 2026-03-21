@@ -1,0 +1,111 @@
+import { NextResponse } from "next/server";
+import { cookies } from "next/headers";
+import { getAdminAuth, getAdminDb } from "@/lib/firebaseAdmin";
+
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
+const USER_COOKIE_NAME = process.env.USER_COOKIE_NAME || "__user_session";
+const ADMIN_COOKIE_FALLBACK = "aitoolshub_token";
+
+function isAdminEmail(email?: string | null) {
+    const list = (process.env.ADMIN_EMAILS || "")
+        .split(",")
+        .map((s) => s.trim().toLowerCase())
+        .filter(Boolean);
+    if (!email) return false;
+    return list.includes(email.toLowerCase());
+}
+
+async function getUidFromAnySessionCookie() {
+    const jar = cookies();
+    const token =
+        jar.get(USER_COOKIE_NAME)?.value || jar.get(ADMIN_COOKIE_FALLBACK)?.value;
+
+    if (!token) return null;
+
+    try {
+        const adminAuth = getAdminAuth();
+        const decoded = await adminAuth.verifySessionCookie(token, true);
+        return decoded?.uid || null;
+    } catch {
+        return null;
+    }
+}
+
+function cleanSlug(input: string) {
+    return String(input || "")
+        .trim()
+        .toLowerCase()
+        .replace(/[^a-z0-9-_]+/g, "-")
+        .replace(/-+/g, "-")
+        .replace(/^-|-$/g, "");
+}
+
+export async function POST(req: Request) {
+    try {
+        const uid = await getUidFromAnySessionCookie();
+        if (!uid) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+        const adminAuth = getAdminAuth();
+        const user = await adminAuth.getUser(uid);
+        if (!isAdminEmail(user.email)) {
+            return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+        }
+
+        const body = await req.json().catch(() => null);
+        const id = String(body?.id || "").trim();
+        if (!id) return NextResponse.json({ error: "Missing submission id" }, { status: 400 });
+
+        const db = getAdminDb();
+        const subRef = db.collection("tool_submissions").doc(id);
+        const subSnap = await subRef.get();
+
+        if (!subSnap.exists) {
+            return NextResponse.json({ error: "Submission not found" }, { status: 404 });
+        }
+
+        const sub = subSnap.data() as any;
+        const slug = cleanSlug(sub.slug || sub.name || id);
+        if (!slug) {
+            return NextResponse.json({ error: "Missing valid slug/name" }, { status: 400 });
+        }
+
+        const now = Date.now();
+
+        await db.collection("tools").doc(slug).set(
+            {
+                name: sub.name || slug,
+                slug,
+                description: sub.description || "",
+                category: sub.category || "general",
+                website: sub.website || "",
+                logo: sub.logo || "",
+                pricing: sub.pricing || "",
+                affiliateUrl: sub.affiliateUrl || null,
+                affiliateNetwork: sub.affiliateNetwork || null,
+                published: true,
+                featured: false,
+                clicks: 0,
+                createdAt: sub.createdAt || now,
+                updatedAt: now,
+                sourceSubmissionId: id,
+            },
+            { merge: true }
+        );
+
+        await subRef.set(
+            {
+                status: "approved",
+                reviewedAt: now,
+                reviewedBy: user.email || null,
+            },
+            { merge: true }
+        );
+
+        return NextResponse.json({ ok: true, slug });
+    } catch (err) {
+        console.error("ADMIN_SUBMISSIONS_APPROVE_ERROR:", err);
+        return NextResponse.json({ error: "Server error" }, { status: 500 });
+    }
+}

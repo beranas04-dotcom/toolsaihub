@@ -3,6 +3,8 @@
 import Link from "next/link";
 import DownloadButton from "@/components/DownloadButton";
 import DownloadLimitBadge from "@/components/DownloadLimitBadge";
+import LibraryOnboarding from "@/components/library/LibraryOnboarding";
+import LibraryTips from "@/components/library/LibraryTips";
 import type { Product, SystemItem } from "@/types/library";
 
 function toLabel(s?: string) {
@@ -19,11 +21,34 @@ function isNew(createdAt?: number) {
 
 function DifficultyPill({ v }: { v?: SystemItem["difficulty"] }) {
     const val = v || "beginner";
-    const label = val === "advanced" ? "Advanced" : val === "intermediate" ? "Intermediate" : "Beginner";
+    const label =
+        val === "advanced"
+            ? "Advanced"
+            : val === "intermediate"
+                ? "Intermediate"
+                : "Beginner";
+
     return (
         <span className="text-[11px] rounded-full border border-border bg-muted/40 px-2.5 py-1 text-muted-foreground">
             {label}
         </span>
+    );
+}
+
+function ProductPreview({
+    product,
+}: {
+    product: Product;
+}) {
+    const preview =
+        (product as any).preview ||
+        product.description ||
+        "A practical premium resource designed to help you move faster.";
+
+    return (
+        <p className="mt-2 text-sm text-muted-foreground line-clamp-3">
+            {preview}
+        </p>
     );
 }
 
@@ -46,6 +71,9 @@ export default function LibraryUI({
 
     return (
         <main className="max-w-6xl mx-auto px-6 py-16 md:py-20 relative">
+            <LibraryOnboarding />
+            <LibraryTips />
+
             {/* Header */}
             <section className="mb-10">
                 <div className="inline-flex items-center gap-2 rounded-full border border-border bg-muted/30 px-3 py-1 text-xs text-muted-foreground">
@@ -127,7 +155,10 @@ export default function LibraryUI({
                     ) : null}
                 </p>
 
-                <Link href="/manage" className="text-sm underline text-muted-foreground hover:text-foreground">
+                <Link
+                    href="/manage"
+                    className="text-sm underline text-muted-foreground hover:text-foreground"
+                >
                     Manage subscription
                 </Link>
             </div>
@@ -226,11 +257,10 @@ export default function LibraryUI({
                                                 ) : null}
                                             </div>
 
-                                            <div className="mt-6">
-                                                {/* دابا غادي نربطوها بصفحة system من بعد */}
+                                            <div className="mt-6 flex gap-2">
                                                 <Link
                                                     href={`/systems/${encodeURIComponent(s.id)}`}
-                                                    className="block w-full rounded-2xl bg-primary px-4 py-2.5 text-center font-semibold text-white hover:opacity-95"
+                                                    className="flex-1 rounded-2xl bg-primary px-4 py-2.5 text-center font-semibold text-white hover:opacity-95"
                                                 >
                                                     Open system
                                                 </Link>
@@ -252,7 +282,7 @@ export default function LibraryUI({
                             <div>
                                 <h2 className="text-2xl font-extrabold">Products</h2>
                                 <p className="text-sm text-muted-foreground">
-                                    Ready-to-use assets you can download instantly.
+                                    Ready-to-use assets you can preview and download instantly.
                                 </p>
                             </div>
                             <span className="text-xs rounded-full border border-border bg-muted/30 px-3 py-1 text-muted-foreground">
@@ -277,12 +307,14 @@ export default function LibraryUI({
                                         >
                                             <div className="flex items-start justify-between gap-3">
                                                 <div className="min-w-0">
-                                                    <h3 className="font-extrabold text-lg leading-snug truncate">
+                                                    <Link
+                                                        href={`/products/${encodeURIComponent(p.id)}`}
+                                                        className="font-extrabold text-lg leading-snug hover:underline"
+                                                    >
                                                         {p.title}
-                                                    </h3>
-                                                    <p className="mt-2 text-sm text-muted-foreground line-clamp-2">
-                                                        {p.description || "Premium resource"}
-                                                    </p>
+                                                    </Link>
+
+                                                    <ProductPreview product={p} />
                                                 </div>
 
                                                 <div className="flex flex-col items-end gap-2 shrink-0">
@@ -309,6 +341,11 @@ export default function LibraryUI({
                                                 <span className="text-xs rounded-full border border-border bg-muted/30 px-3 py-1 text-muted-foreground">
                                                     {toLabel(p.category || "general")}
                                                 </span>
+
+                                                <span className="text-xs rounded-full border border-border bg-muted/30 px-3 py-1 text-muted-foreground">
+                                                    Preview available
+                                                </span>
+
                                                 {!p.fileUrl ? (
                                                     <span className="text-xs rounded-full border border-yellow-500/30 bg-yellow-500/10 px-3 py-1 text-yellow-600">
                                                         Coming soon
@@ -316,7 +353,14 @@ export default function LibraryUI({
                                                 ) : null}
                                             </div>
 
-                                            <div className="mt-6">
+                                            <div className="mt-6 grid grid-cols-2 gap-2">
+                                                <Link
+                                                    href={`/products/${encodeURIComponent(p.id)}`}
+                                                    className="rounded-2xl border border-border bg-background px-4 py-2.5 text-center font-semibold hover:bg-muted/30"
+                                                >
+                                                    Open details
+                                                </Link>
+
                                                 {p.fileUrl ? (
                                                     <DownloadButton
                                                         productId={p.id}
@@ -334,7 +378,11 @@ export default function LibraryUI({
                                             </div>
 
                                             <p className="mt-3 text-[11px] text-muted-foreground">
-                                                {p.fileUrl ? "Instant download" : "New drops added regularly"}
+                                                {p.fileUrl
+                                                    ? tier === "pro"
+                                                        ? "Premium download inside JLADAN Pro"
+                                                        : "Free instant download"
+                                                    : "New drops added regularly"}
                                             </p>
                                         </div>
                                     );

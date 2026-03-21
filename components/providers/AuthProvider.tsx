@@ -6,7 +6,6 @@ import { auth } from "@/lib/firebaseClient";
 import { User } from "@/types";
 import { isAdmin } from "@/lib/admin";
 
-console.log("ADMIN EMAILS:", process.env.NEXT_PUBLIC_ADMIN_EMAILS);
 
 interface AuthContextType {
     user: User | null;

@@ -1,64 +1,93 @@
-import type { Metadata } from "next";
 import Link from "next/link";
-import { siteMetadata } from "@/lib/siteMetadata";
-import { getAllTopics } from "@/lib/topics";
+import ToolCardPro from "@/components/tools/ToolCardPro";
+import { getBestCategories, getBestTools } from "@/lib/bestTools";
 
+export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-export const metadata: Metadata = {
-    title: `Best AI Tools by Category | ${siteMetadata.siteName}`,
-    description:
-        "Explore the best AI tools by category. Carefully curated picks with pricing, features, and direct links.",
-    alternates: { canonical: `${siteMetadata.siteUrl.replace(/\/$/, "")}/best` },
-};
+export default async function BestPage() {
+    const [tools, categories] = await Promise.all([
+        getBestTools(),
+        getBestCategories(),
+    ]);
 
-export default function BestIndexPage() {
-    const topics = getAllTopics();
+    const topTools = tools.slice(0, 12);
 
     return (
-        <main className="container mx-auto px-6 py-10">
-            <section className="mb-10 rounded-3xl border border-border bg-card p-8 relative overflow-hidden">
-                <div className="absolute inset-0 bg-gradient-to-br from-primary/12 via-transparent to-transparent" />
-                <div className="relative">
-                    <h1 className="text-3xl md:text-4xl font-bold">Best AI Tools (Money Pages)</h1>
-                    <p className="text-muted-foreground mt-2 max-w-2xl">
-                        Pick a category to see the best tools with quick comparisons, pricing notes, and direct links.
-                    </p>
-
-                    <div className="mt-6 flex flex-wrap gap-3 text-sm">
-                        <div className="rounded-full border border-border bg-background px-4 py-2">
-                            ✅ <span className="font-semibold">{topics.length}</span> categories
-                        </div>
-                        <div className="rounded-full border border-border bg-background px-4 py-2">
-                            💰 Optimized for affiliate clicks
-                        </div>
-                        <div className="rounded-full border border-border bg-background px-4 py-2">
-                            🔍 Built for SEO + internal linking
-                        </div>
-                    </div>
+        <main className="max-w-6xl mx-auto px-6 py-16 md:py-20">
+            <section className="mb-10">
+                <div className="inline-flex items-center gap-2 rounded-full border border-border bg-muted/30 px-3 py-1 text-xs text-muted-foreground">
+                    <span className="h-2 w-2 rounded-full bg-primary" />
+                    Best AI tools
                 </div>
+
+                <h1 className="mt-5 text-4xl md:text-5xl font-extrabold tracking-tight">
+                    Best AI Tools
+                </h1>
+
+                <p className="mt-3 text-muted-foreground max-w-2xl">
+                    Explore top-performing AI tools ranked using featured placement, activity, and popularity.
+                </p>
             </section>
 
-            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                {topics.map((t) => (
-                    <Link
-                        key={t.slug}
-                        href={`/best/${t.slug}`}
-                        className="group rounded-2xl border border-border bg-card p-6 hover:border-primary/60 hover:shadow-md transition"
-                    >
-                        <div className="text-xs text-muted-foreground mb-2">Category</div>
-                        <h2 className="text-xl font-bold group-hover:text-primary transition">
-                            {t.title}
-                        </h2>
-                        <p className="mt-2 text-sm text-muted-foreground line-clamp-3">
-                            {t.description}
+            <section className="mb-10">
+                <div className="flex items-center justify-between gap-4 mb-5">
+                    <div>
+                        <h2 className="text-2xl font-extrabold">Browse by category</h2>
+                        <p className="text-sm text-muted-foreground">
+                            Jump directly to the best tools in a specific category.
                         </p>
-                        <div className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-primary">
-                            View picks <span className="transition group-hover:translate-x-0.5">→</span>
-                        </div>
-                    </Link>
-                ))}
-            </div>
+                    </div>
+                </div>
+
+                {categories.length === 0 ? (
+                    <div className="rounded-3xl border border-border bg-muted/20 p-6 text-sm text-muted-foreground">
+                        No categories available yet.
+                    </div>
+                ) : (
+                    <div className="flex flex-wrap gap-2">
+                        {categories.map((cat: any) => (
+                            <Link
+                                key={cat.slug}
+                                href={`/best/category/${encodeURIComponent(cat.slug)}`}
+                                className="rounded-full border border-border bg-background px-4 py-2 text-sm font-semibold hover:bg-muted/30"
+                            >
+                                {cat.icon ? `${cat.icon} ` : ""}
+                                {cat.name}
+                            </Link>
+                        ))}
+                    </div>
+                )}
+            </section>
+
+            <section>
+                <div className="flex items-end justify-between gap-4 mb-5">
+                    <div>
+                        <h2 className="text-2xl font-extrabold">Top picks</h2>
+                        <p className="text-sm text-muted-foreground">
+                            The strongest tools right now across categories.
+                        </p>
+                    </div>
+                    <span className="text-xs rounded-full border border-border bg-muted/30 px-3 py-1 text-muted-foreground">
+                        {topTools.length} shown
+                    </span>
+                </div>
+
+                {topTools.length === 0 ? (
+                    <div className="rounded-3xl border border-border bg-muted/20 p-10 text-center">
+                        <h2 className="text-xl font-bold">No tools found</h2>
+                        <p className="mt-2 text-sm text-muted-foreground">
+                            Publish tools from the admin panel to populate this page.
+                        </p>
+                    </div>
+                ) : (
+                    <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {topTools.map((tool: any) => (
+                            <ToolCardPro key={tool.id} tool={tool} />
+                        ))}
+                    </div>
+                )}
+            </section>
         </main>
     );
 }

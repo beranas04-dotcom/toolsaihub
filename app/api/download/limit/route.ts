@@ -8,6 +8,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 const COOKIE_NAME = process.env.USER_COOKIE_NAME || "__user_session";
+
 const FREE_LIMIT_UID = Number(process.env.FREE_DOWNLOADS_PER_DAY || 3);
 const PRO_LIMIT_UID = Number(process.env.PRO_DOWNLOADS_PER_DAY || 50);
 
@@ -47,52 +48,64 @@ async function getUidFromSessionCookie(): Promise<string | null> {
 }
 
 export async function GET() {
-    const uid = await getUidFromSessionCookie();
-    if (!uid) {
-        return NextResponse.json({ authenticated: false }, { status: 200 });
+    try {
+        const uid = await getUidFromSessionCookie();
+
+        // Not logged in → badge hidden (DownloadLimitBadge checks ok)
+        if (!uid) {
+            return NextResponse.json({ ok: false }, { status: 200 });
+        }
+
+        const db = getAdminDb();
+
+        // plan
+        const userSnap = await db.collection("users").doc(uid).get();
+        const isProActive = userSnap.data()?.subscription?.status === "active";
+
+        const plan = isProActive ? ("pro" as const) : ("free" as const);
+        const limitUid = plan === "pro" ? PRO_LIMIT_UID : FREE_LIMIT_UID;
+        const limitIp = plan === "pro" ? PRO_LIMIT_IP : FREE_LIMIT_IP;
+
+        // keys
+        const dateKey = todayKeyUTC();
+        const ipKey = hashIP(getIP());
+
+        const uidDocId = `${uid}_${dateKey}`;
+        const ipDocId = `${ipKey}_${dateKey}`;
+
+        const [uidLimSnap, ipLimSnap] = await Promise.all([
+            db.collection("download_limits").doc(uidDocId).get(),
+            db.collection("download_ip_limits").doc(ipDocId).get(),
+        ]);
+
+        const usedUid = uidLimSnap.exists ? Number((uidLimSnap.data() as any)?.count || 0) : 0;
+        const usedIp = ipLimSnap.exists ? Number((ipLimSnap.data() as any)?.count || 0) : 0;
+
+        const remainingUid = Math.max(0, limitUid - usedUid);
+        const remainingIp = Math.max(0, limitIp - usedIp);
+
+        // effective limit = اللي يوقف user فعلاً (UID ولا IP)
+        const remaining = Math.min(remainingUid, remainingIp);
+        const limit = Math.min(limitUid, limitIp);
+
+        // used (تقريبي) للـ UI
+        const count = Math.max(usedUid, usedIp);
+
+        return NextResponse.json({
+            ok: true,
+            plan,
+            dateKey,
+            limit,
+            count,
+            remaining,
+
+            // debug (اختياري): تقدر تحيدهم إلا ما بغيتيهومش
+            uid: { used: usedUid, limit: limitUid, remaining: remainingUid },
+            ip: { used: usedIp, limit: limitIp, remaining: remainingIp },
+        });
+    } catch (err) {
+        console.error("DOWNLOAD_LIMIT_API_ERROR:", err);
+        // نخليوها ok:false باش مايبانش badge إلا كان خطأ
+        return NextResponse.json({ ok: false }, { status: 200 });
     }
-
-    const db = getAdminDb();
-    const userSnap = await db.collection("users").doc(uid).get();
-    const isProActive = userSnap.data()?.subscription?.status === "active";
-
-    const plan = isProActive ? ("pro" as const) : ("free" as const);
-    const limitUid = plan === "pro" ? PRO_LIMIT_UID : FREE_LIMIT_UID;
-    const limitIp = plan === "pro" ? PRO_LIMIT_IP : FREE_LIMIT_IP;
-
-    const dateKey = todayKeyUTC();
-    const ipKey = hashIP(getIP());
-
-    const uidDocId = `${uid}_${dateKey}`;
-    const ipDocId = `${ipKey}_${dateKey}`;
-
-    const [uidLimSnap, ipLimSnap] = await Promise.all([
-        db.collection("download_limits").doc(uidDocId).get(),
-        db.collection("download_ip_limits").doc(ipDocId).get(),
-    ]);
-
-    const usedUid = uidLimSnap.exists ? Number((uidLimSnap.data() as any)?.count || 0) : 0;
-    const usedIp = ipLimSnap.exists ? Number((ipLimSnap.data() as any)?.count || 0) : 0;
-
-    const remainingUid = Math.max(0, limitUid - usedUid);
-    const remainingIp = Math.max(0, limitIp - usedIp);
-
-    // effective = الحد اللي غادي يوقفك فعلاً
-    const remaining = Math.min(remainingUid, remainingIp);
-    const limit = Math.min(limitUid, limitIp);
-
-    // used (تقريبي) باش يبان فـ UI
-    const count = Math.max(usedUid, usedIp);
-
-    return NextResponse.json({
-        ok: true,
-        plan,
-        dateKey,
-        limit,
-        count,
-        remaining,
-        // optional debug (إلا بغيتي)
-        uid: { used: usedUid, limit: limitUid, remaining: remainingUid },
-        ip: { used: usedIp, limit: limitIp, remaining: remainingIp },
-    });
 }

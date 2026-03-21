@@ -10,6 +10,7 @@ export interface Tool {
     pricing?: string;
     pricingDetails?: string;
     freeTrial?: boolean;
+    lastUpdated?: string;
     logo?: string;
     features?: string[];
     tags?: string[];

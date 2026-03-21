@@ -1,139 +1,161 @@
-"use client";
-
 import Link from "next/link";
-import { useEffect, useState } from "react";
 
-type StatusResp = { ok: boolean; status: string };
-
-async function fetchStatus(): Promise<StatusResp> {
-    try {
-        const res = await fetch("/api/subscription/status", { cache: "no-store" });
-        if (!res.ok) return { ok: false, status: "none" };
-        return (await res.json()) as StatusResp;
-    } catch {
-        return { ok: false, status: "none" };
-    }
-}
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 
 export default function ThanksPage() {
-    const [status, setStatus] = useState<string>("activating");
-    const [loading, setLoading] = useState(false);
-
-    // Auto-poll for up to ~30s
-    useEffect(() => {
-        let tries = 0;
-        let stopped = false;
-
-        async function tick() {
-            const data = await fetchStatus();
-            if (stopped) return;
-
-            if (data?.status) setStatus(data.status);
-
-            // Stop polling if active or after 10 tries (≈ 30s)
-            tries += 1;
-            if (data.status === "active" || tries >= 10) return;
-
-            setTimeout(tick, 3000);
-        }
-
-        tick();
-        return () => {
-            stopped = true;
-        };
-    }, []);
-
-    const isActive = status === "active";
-    const isInactive = status === "inactive";
-    const isNone = status === "none";
-
-    async function manualRefresh() {
-        setLoading(true);
-        const data = await fetchStatus();
-        setStatus(data.status || "none");
-        setLoading(false);
-    }
-
     return (
-        <main className="max-w-3xl mx-auto px-4 py-20">
-            <section className="text-center">
-                <div className="mx-auto mb-6 w-20 h-20 rounded-full flex items-center justify-center text-4xl bg-green-50 dark:bg-green-900/20">
-                    ✅
+        <main className="max-w-5xl mx-auto px-6 py-16 md:py-24">
+            <section className="relative overflow-hidden rounded-[2rem] border border-border/60 bg-background/40 backdrop-blur px-6 py-12 md:px-10 md:py-16 text-center">
+                <div className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
+                    <div className="absolute -top-20 left-1/2 h-56 w-[620px] -translate-x-1/2 rounded-full bg-primary/10 blur-3xl" />
+                    <div className="absolute bottom-0 left-0 h-40 w-40 rounded-full bg-cyan-500/10 blur-3xl" />
+                    <div className="absolute top-10 right-0 h-40 w-40 rounded-full bg-purple-500/10 blur-3xl" />
                 </div>
 
-                <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight">
+                <div className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-xs text-primary">
+                    <span className="h-2 w-2 rounded-full bg-primary" />
                     Welcome to JLADAN Pro
+                </div>
+
+                <h1 className="mt-6 text-4xl md:text-5xl font-extrabold tracking-tight">
+                    Payment successful 🎉
                 </h1>
 
-                <p className="mt-4 text-base md:text-lg text-muted-foreground">
-                    Your checkout is complete. Your Pro access should activate shortly.
+                <p className="mt-4 text-base md:text-lg text-muted-foreground max-w-2xl mx-auto">
+                    Your subscription is now active. You can access premium systems, downloadable products,
+                    and the full JLADAN library.
                 </p>
 
-                {/* Status pill */}
-                <div className="mt-6 inline-flex items-center gap-2 rounded-full border border-border px-4 py-2 text-sm">
-                    <span
-                        className={[
-                            "h-2 w-2 rounded-full",
-                            isActive ? "bg-green-500" : isInactive || isNone ? "bg-red-500" : "bg-yellow-500",
-                        ].join(" ")}
-                    />
-                    <span className="text-muted-foreground">
-                        {isActive && "Status: Active ✅"}
-                        {!isActive && !isInactive && !isNone && "Status: Activating… (auto-checking)"}
-                        {isInactive && "Status: Inactive"}
-                        {isNone && "Status: Not detected (try signing in again)"}
-                    </span>
-                </div>
-
-                {/* Manual refresh */}
-                <div className="mt-4">
-                    <button
-                        onClick={manualRefresh}
-                        disabled={loading}
-                        className="text-sm underline text-muted-foreground hover:text-foreground disabled:opacity-60"
-                    >
-                        {loading ? "Checking..." : "Refresh status"}
-                    </button>
-                </div>
-
-                <div className="mt-10 flex flex-col sm:flex-row gap-3 justify-center">
+                <div className="mt-8 flex flex-col sm:flex-row gap-3 justify-center">
                     <Link
                         href="/library"
-                        className="rounded-xl bg-primary px-8 py-3 font-semibold text-white hover:opacity-95 text-center"
+                        className="rounded-2xl bg-primary px-7 py-3.5 font-semibold text-white hover:opacity-95"
                     >
                         Go to Library
                     </Link>
 
                     <Link
-                        href="/pro"
-                        className="rounded-xl border border-border px-8 py-3 font-semibold hover:bg-muted text-center"
+                        href="/systems"
+                        className="rounded-2xl border border-border bg-background px-7 py-3.5 font-semibold hover:bg-muted/30"
                     >
-                        Open Pro Dashboard
+                        Start with Systems
                     </Link>
-                </div>
 
-                <div className="mt-4">
                     <Link
-                        href="/manage"
-                        className="text-sm text-muted-foreground underline hover:text-foreground"
+                        href="/pricing"
+                        className="rounded-2xl border border-border bg-background px-7 py-3.5 font-semibold hover:bg-muted/30"
                     >
-                        Manage subscription
+                        View Plan
                     </Link>
                 </div>
+            </section>
 
-                <div className="mt-10 mx-auto max-w-xl text-left rounded-2xl border border-border p-6 bg-muted/20">
-                    <h2 className="text-lg font-bold">What to do next</h2>
-                    <ul className="mt-3 space-y-2 text-sm text-muted-foreground">
-                        <li>• Open the Library and download your first Pro kit/template.</li>
-                        <li>• If status takes time, click “Refresh status”.</li>
-                        <li>• Need help? Contact support from the footer.</li>
-                    </ul>
+            <section className="mt-10 grid gap-6 md:grid-cols-3">
+                <OnboardingCard
+                    step="1"
+                    title="Open your Library"
+                    desc="Browse all premium products and start with the assets that match your goal."
+                    href="/library"
+                    label="Open Library"
+                />
+
+                <OnboardingCard
+                    step="2"
+                    title="Start with a System"
+                    desc="Use a step-by-step system if you want a clear execution path instead of random browsing."
+                    href="/systems"
+                    label="Explore Systems"
+                />
+
+                <OnboardingCard
+                    step="3"
+                    title="Download your first asset"
+                    desc="Pick a premium product and download something useful immediately to get quick value."
+                    href="/library"
+                    label="Get a Download"
+                />
+            </section>
+
+            <section className="mt-10 rounded-3xl border border-border/60 bg-background/35 backdrop-blur p-8">
+                <h2 className="text-2xl font-extrabold text-center">What you unlocked</h2>
+
+                <div className="mt-6 grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <BenefitCard text="Premium library access" />
+                    <BenefitCard text="Systems & playbooks" />
+                    <BenefitCard text="Premium downloads" />
+                    <BenefitCard text="Future premium drops" />
                 </div>
+            </section>
 
-                <p className="mt-8 text-xs text-muted-foreground">
-                    Tip: Make sure you’re logged in with the same Google account used at checkout.
+            <section className="mt-10 text-center">
+                <p className="text-sm text-muted-foreground">
+                    Need help getting started? The best first step is usually the library or systems page.
                 </p>
+
+                <div className="mt-4 flex flex-wrap justify-center gap-3">
+                    <Link
+                        href="/library"
+                        className="rounded-2xl border border-border bg-background px-5 py-2.5 font-semibold hover:bg-muted/30"
+                    >
+                        Library
+                    </Link>
+
+                    <Link
+                        href="/systems"
+                        className="rounded-2xl border border-border bg-background px-5 py-2.5 font-semibold hover:bg-muted/30"
+                    >
+                        Systems
+                    </Link>
+
+                    <Link
+                        href="/tools"
+                        className="rounded-2xl border border-border bg-background px-5 py-2.5 font-semibold hover:bg-muted/30"
+                    >
+                        Back to Tools
+                    </Link>
+                </div>
             </section>
         </main>
+    );
+}
+
+function OnboardingCard({
+    step,
+    title,
+    desc,
+    href,
+    label,
+}: {
+    step: string;
+    title: string;
+    desc: string;
+    href: string;
+    label: string;
+}) {
+    return (
+        <div className="rounded-3xl border border-border/60 bg-background/35 backdrop-blur p-6">
+            <div className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-sm font-bold text-primary">
+                {step}
+            </div>
+
+            <h3 className="mt-4 text-xl font-extrabold">{title}</h3>
+            <p className="mt-2 text-sm text-muted-foreground">{desc}</p>
+
+            <Link
+                href={href}
+                className="mt-5 inline-flex rounded-2xl border border-border bg-background px-4 py-2.5 font-semibold hover:bg-muted/30"
+            >
+                {label}
+            </Link>
+        </div>
+    );
+}
+
+function BenefitCard({ text }: { text: string }) {
+    return (
+        <div className="rounded-2xl border border-border bg-background/60 p-4 text-sm font-medium">
+            ✅ {text}
+        </div>
     );
 }

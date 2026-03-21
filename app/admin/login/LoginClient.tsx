@@ -1,102 +1,93 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import { GoogleAuthProvider, signInWithPopup } from "firebase/auth";
 import { auth } from "@/lib/firebaseClient";
+import { useState } from "react";
 
-export default function LoginClient() {
-    const router = useRouter();
+export const dynamic = "force-dynamic";
+export default function AdminLoginPage() {
     const searchParams = useSearchParams();
+    const router = useRouter();
+    const [loading, setLoading] = useState(false);
+    const [err, setErr] = useState<string | null>(null);
 
-    const nextUrl = useMemo(() => searchParams.get("next") || "/admin", [searchParams]);
-    const error = searchParams.get("error");
+    const next = searchParams.get("next") || "/admin";
 
-    const [loading, setLoading] = useState(true);
-    const [signing, setSigning] = useState(false);
-
-    useEffect(() => {
-        let alive = true;
-
-        (async () => {
-            try {
-                const who = await fetch("/api/auth/whoami", { credentials: "include" })
-                    .then((r) => r.json())
-                    .catch(() => null);
-
-                if (!alive) return;
-
-                if (who?.user?.admin) {
-                    router.replace("/admin");
-                    return;
-                }
-            } finally {
-                if (alive) setLoading(false);
-            }
-        })();
-
-        return () => {
-            alive = false;
-        };
-    }, [router]);
-
-    async function signIn() {
+    async function handleLogin() {
         try {
-            setSigning(true);
+            setErr(null);
+            setLoading(true);
 
             const provider = new GoogleAuthProvider();
             const result = await signInWithPopup(auth, provider);
-            const token = await result.user.getIdToken(true);
+            const idToken = await result.user.getIdToken(true);
 
-            const res = await fetch("/api/auth/session", {
+            // 1) create main user session
+            const sRes = await fetch("/api/user/session", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ token }),
+                body: JSON.stringify({ token: idToken }),
                 credentials: "include",
             });
 
-            const data = await res.json().catch(() => ({}));
-
-            if (!res.ok) {
-                console.error("SESSION ERROR:", data);
-                alert("Session failed: " + (data?.error || "unknown"));
-                return;
+            const sJson = await sRes.json().catch(() => null);
+            if (!sRes.ok) {
+                throw new Error(sJson?.error || "Failed to create user session");
             }
 
-            router.replace(nextUrl);
-        } catch (e) {
+            // 2) create admin cookie for middleware
+            const aRes = await fetch("/api/admin/session", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${idToken}`,
+                },
+                credentials: "include",
+            });
+
+            const aJson = await aRes.json().catch(() => null);
+            if (!aRes.ok) {
+                throw new Error(aJson?.error || "Admin access denied");
+            }
+
+            router.replace(next);
+            router.refresh();
+        } catch (e: any) {
             console.error(e);
-            alert("Login failed");
+            setErr(e?.message || "Login failed");
         } finally {
-            setSigning(false);
+            setLoading(false);
         }
     }
 
-    if (loading) {
-        return (
-            <main className="container mx-auto px-6 py-16 max-w-md">
-                <p className="text-muted-foreground">Checking session...</p>
-            </main>
-        );
-    }
-
     return (
-        <main className="container mx-auto px-6 py-16 max-w-md">
-            <h1 className="text-3xl font-bold mb-6">Admin Login</h1>
+        <main className="max-w-xl mx-auto px-6 py-20">
+            <div className="rounded-3xl border border-border/60 bg-background/35 backdrop-blur p-8">
+                <div className="inline-flex items-center gap-2 rounded-full border border-border/60 bg-background/40 px-3 py-1 text-xs text-muted-foreground">
+                    <span className="h-2 w-2 rounded-full bg-primary" />
+                    Admin access
+                </div>
 
-            {error && (
-                <p className="mb-4 rounded-md border border-red-200 bg-red-50 p-3 text-red-700">
-                    {error}
+                <h1 className="mt-5 text-3xl font-extrabold">Admin Login</h1>
+                <p className="mt-2 text-sm text-muted-foreground">
+                    Sign in with your admin Google account to access the dashboard.
                 </p>
-            )}
 
-            <button
-                onClick={signIn}
-                disabled={signing}
-                className="w-full bg-primary text-primary-foreground py-3 rounded-lg font-semibold disabled:opacity-60"
-            >
-                {signing ? "Loading..." : "Continue with Google"}
-            </button>
+                <button
+                    onClick={handleLogin}
+                    disabled={loading}
+                    className="mt-6 w-full rounded-2xl bg-primary px-5 py-3 font-semibold text-white hover:opacity-95 disabled:opacity-60"
+                >
+                    {loading ? "Signing in..." : "Sign in with Google"}
+                </button>
+
+                {err ? (
+                    <div className="mt-4 rounded-2xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-200">
+                        {err}
+                    </div>
+                ) : null}
+            </div>
         </main>
     );
 }

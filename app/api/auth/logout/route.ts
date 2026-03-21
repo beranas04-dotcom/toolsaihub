@@ -1,18 +1,18 @@
 import { NextResponse } from "next/server";
 
-export const runtime = "nodejs";
-
 export async function POST() {
-    const cookieName = process.env.USER_COOKIE_NAME || "__user_session";
+    const COOKIE_NAME = process.env.USER_COOKIE_NAME || "aitoolshub_token";
 
     const res = NextResponse.json({ ok: true });
-    // مسح الكوكي نهائيا
-    res.cookies.set(cookieName, "", {
+
+    res.cookies.set({
+        name: COOKIE_NAME,
+        value: "",
         httpOnly: true,
-        secure: true,
+        secure: process.env.NODE_ENV === "production",
         sameSite: "lax",
         path: "/",
-        maxAge: 0,
+        expires: new Date(0),
     });
 
     return res;
