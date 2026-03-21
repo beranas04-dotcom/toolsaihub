@@ -25,3 +25,15 @@ export async function getSubscriptionStatus(uid: string) {
         hasAccess: active || isAdmin,
     };
 }
+import "server-only";
+import { getAdminDb } from "@/lib/firebaseAdmin";
+
+export async function isProUser(uid: string): Promise<boolean> {
+    try {
+        const db = getAdminDb();
+        const snap = await db.collection("users").doc(uid).get();
+        return snap.data()?.subscription?.status === "active";
+    } catch {
+        return false;
+    }
+}
