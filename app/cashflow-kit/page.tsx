@@ -6,7 +6,7 @@ export const metadata = {
 
 const previewItems = [
     {
-        image: "/products/cashflow-kit/preview-1.Jpg",
+        image: "/products/cashflow-kit/preview-1.JPG",
         alt: "AI Cashflow Launch Kit preview 1",
         badge: "Framework",
         title: "AI Business System",
@@ -14,7 +14,7 @@ const previewItems = [
             "A visual framework showing how idea, product, automation, traffic, and revenue connect inside a simple AI business model.",
     },
     {
-        image: "/products/cashflow-kit/preview-2.Jpg",
+        image: "/products/cashflow-kit/preview-2.JPG",
         alt: "AI Cashflow Launch Kit preview 2",
         badge: "Roadmap",
         title: "30 Day Launch Plan",
@@ -22,7 +22,7 @@ const previewItems = [
             "A step-by-step launch roadmap designed to help you go from idea to product execution in four simple weeks.",
     },
     {
-        image: "/products/cashflow-kit/preview-3.Jpg",
+        image: "/products/cashflow-kit/preview-3.JPG",
         alt: "AI Cashflow Launch Kit preview 3",
         badge: "Prompts",
         title: "AI Prompt Vault",
@@ -30,7 +30,7 @@ const previewItems = [
             "Ready-to-use prompt frameworks for product ideas, positioning, content planning, and faster execution.",
     },
     {
-        image: "/products/cashflow-kit/preview-4.Jpg",
+        image: "/products/cashflow-kit/preview-4.JPG",
         alt: "AI Cashflow Launch Kit preview 4",
         badge: "Strategy",
         title: "Simple Pricing Strategy",
@@ -38,7 +38,7 @@ const previewItems = [
             "A clean breakdown of how to think about offer structure, value, and pricing tiers for digital products.",
     },
     {
-        image: "/products/cashflow-kit/preview-5.Jpg",
+        image: "/products/cashflow-kit/preview-5.JPG",
         alt: "AI Cashflow Launch Kit preview 5",
         badge: "Content",
         title: "The Content Engine",
@@ -46,7 +46,7 @@ const previewItems = [
             "A practical content structure showing how educational, authority, proof, and conversion content work together.",
     },
     {
-        image: "/products/cashflow-kit/preview-6.Jpg",
+        image: "/products/cashflow-kit/preview-6.JPG",
         alt: "AI Cashflow Launch Kit preview 6",
         badge: "Clarity",
         title: "Frequently Asked Questions",
