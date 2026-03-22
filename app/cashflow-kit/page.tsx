@@ -8,7 +8,7 @@ export default function CashflowKitPage() {
             {/* HERO */}
             <section className="max-w-4xl mx-auto px-6 py-20 text-center">
                 <h1 className="text-4xl md:text-5xl font-extrabold mb-6">
-                    Launch Your First AI Income Stream in 7 Days
+                    Launch Your First AI Income Stream
                 </h1>
                 <p className="text-lg text-muted-foreground mb-8">
                     No coding. No audience. No experience required.
