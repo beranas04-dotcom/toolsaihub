@@ -1,5 +1,4 @@
 import Link from "next/link";
-import Image from "next/image";
 
 export const metadata = {
     title: "AI Cashflow Launch Kit",
@@ -284,12 +283,11 @@ export default function CashflowKitPage() {
                             key={item.title}
                             className="group border rounded-3xl overflow-hidden bg-card shadow-sm hover:shadow-md transition"
                         >
-                            <div className="relative aspect-[4/5] overflow-hidden">
-                                <Image
+                            <div className="aspect-[4/5] overflow-hidden bg-muted">
+                                <img
                                     src={item.image}
                                     alt={item.alt}
-                                    fill
-                                    className="object-cover transition duration-300 group-hover:scale-[1.02]"
+                                    className="w-full h-full object-cover transition duration-300 group-hover:scale-[1.02]"
                                 />
                             </div>
 
