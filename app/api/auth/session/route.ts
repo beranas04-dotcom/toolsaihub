@@ -4,7 +4,8 @@ import { getAdminAuth } from "@/lib/firebaseAdmin";
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
-const COOKIE_NAME = process.env.ADMIN_COOKIE_NAME || "aitoolshub_token";
+const USER_COOKIE_NAME = process.env.USER_COOKIE_NAME || "__user_session";
+const ADMIN_COOKIE_NAME = process.env.ADMIN_COOKIE_NAME || "aitoolshub_token";
 const EXPIRES_IN = 60 * 60 * 24 * 7; // 7 days
 
 function getAdminEmails(): string[] {
@@ -17,8 +18,12 @@ function getAdminEmails(): string[] {
 
 export async function POST(req: Request) {
     try {
-        const body = (await req.json().catch(() => ({}))) as { token?: string };
-        const idToken = body?.token;
+        const body = (await req.json().catch(() => ({}))) as {
+            token?: string;
+            idToken?: string;
+        };
+
+        const idToken = body?.token || body?.idToken;
 
         if (!idToken || typeof idToken !== "string") {
             return NextResponse.json({ error: "Missing token" }, { status: 400 });
@@ -29,27 +34,46 @@ export async function POST(req: Request) {
 
         const email = (decoded?.email || "").toLowerCase();
         const admins = getAdminEmails();
-
-        if (!email || (admins.length > 0 && !admins.includes(email))) {
-            return NextResponse.json({ error: "Not allowed" }, { status: 403 });
-        }
+        const isAdminUser = !!email && admins.includes(email);
 
         const sessionCookie = await adminAuth.createSessionCookie(idToken, {
             expiresIn: EXPIRES_IN * 1000,
         });
 
-        const res = NextResponse.json({ ok: true });
+        const res = NextResponse.json({
+            ok: true,
+            isAdmin: isAdminUser,
+        });
 
-        res.cookies.set(COOKIE_NAME, sessionCookie, {
+        // ✅ Main cookie for all authenticated users
+        res.cookies.set(USER_COOKIE_NAME, sessionCookie, {
             httpOnly: true,
-            secure: process.env.NODE_ENV === "production", // ✅ مهم
+            secure: process.env.NODE_ENV === "production",
             sameSite: "lax",
             path: "/",
             maxAge: EXPIRES_IN,
         });
 
-        // helpful header (debug)
-        res.headers.set("x-set-cookie", "1");
+        // ✅ Admin cookie only for admins (keeps /admin middleware working)
+        if (isAdminUser) {
+            res.cookies.set(ADMIN_COOKIE_NAME, sessionCookie, {
+                httpOnly: true,
+                secure: process.env.NODE_ENV === "production",
+                sameSite: "lax",
+                path: "/",
+                maxAge: EXPIRES_IN,
+            });
+        } else {
+            // clear admin cookie if non-admin
+            res.cookies.set(ADMIN_COOKIE_NAME, "", {
+                httpOnly: true,
+                secure: process.env.NODE_ENV === "production",
+                sameSite: "lax",
+                path: "/",
+                maxAge: 0,
+            });
+        }
+
         return res;
     } catch (e: any) {
         console.error("SESSION_ERROR:", e?.message, e);
@@ -62,12 +86,22 @@ export async function POST(req: Request) {
 
 export async function DELETE() {
     const res = NextResponse.json({ ok: true });
-    res.cookies.set(COOKIE_NAME, "", {
+
+    res.cookies.set(USER_COOKIE_NAME, "", {
         httpOnly: true,
         secure: process.env.NODE_ENV === "production",
         sameSite: "lax",
         path: "/",
         maxAge: 0,
     });
+
+    res.cookies.set(ADMIN_COOKIE_NAME, "", {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax",
+        path: "/",
+        maxAge: 0,
+    });
+
     return res;
 }
