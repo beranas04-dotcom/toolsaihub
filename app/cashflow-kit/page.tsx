@@ -1,4 +1,5 @@
 import Link from "next/link";
+import CheckoutButton from "@/components/cashflow/CheckoutButton";
 
 export const metadata = {
     title: "AI Cashflow Launch Kit",
@@ -160,14 +161,12 @@ export default function CashflowKitPage() {
                     </p>
 
                     <div className="mt-8 flex flex-col sm:flex-row gap-4 justify-center items-center">
-                        <a
+                        <CheckoutButton
                             href="https://jladan-ai.lemonsqueezy.com/checkout/buy/783e0d0e-6d9d-4a81-953b-de00112ed8c6"
-                            target="_blank"
-                            rel="noopener noreferrer"
                             className="inline-flex items-center justify-center rounded-2xl bg-primary px-8 py-4 text-white font-semibold text-lg shadow-sm hover:opacity-90 transition min-w-[240px]"
                         >
                             Get Instant Access — $19
-                        </a>
+                        </CheckoutButton>
 
                         <Link
                             href="/downloads"
@@ -371,14 +370,13 @@ export default function CashflowKitPage() {
                 </p>
 
                 <div className="mt-8 flex flex-col sm:flex-row gap-4 justify-center items-center">
-                    <a
+                    <CheckoutButton
                         href="https://jladan-ai.lemonsqueezy.com/checkout/buy/783e0d0e-6d9d-4a81-953b-de00112ed8c6"
-                        target="_blank"
-                        rel="noopener noreferrer"
+                        source="final_cta"
                         className="inline-block bg-primary text-white px-8 py-4 rounded-xl font-semibold text-lg hover:opacity-90 transition"
                     >
                         Get Instant Access — $19
-                    </a>
+                    </CheckoutButton>
 
                     <Link
                         href="/downloads"
